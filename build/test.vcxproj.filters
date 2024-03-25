@@ -1,165 +1,165 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="17.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <ClCompile Include="D:\study\my-render\test.cpp">
+    <ClCompile Include="D:\MyRender\test.cpp">
       <Filter>test_main</Filter>
     </ClCompile>
-    <ClCompile Include="D:\study\my-render\base\mikktspace.c">
+    <ClCompile Include="D:\MyRender\base\mikktspace.c">
       <Filter>base</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="D:\study\my-render\test.h">
+    <ClInclude Include="D:\MyRender\test.h">
       <Filter>test_main</Filter>
     </ClInclude>
-    <ClInclude Include="D:\study\my-render\core\Camera.hpp">
+    <ClInclude Include="D:\MyRender\core\Camera.hpp">
       <Filter>core</Filter>
     </ClInclude>
-    <ClInclude Include="D:\study\my-render\core\Config.hpp">
+    <ClInclude Include="D:\MyRender\core\Config.hpp">
       <Filter>core</Filter>
     </ClInclude>
-    <ClInclude Include="D:\study\my-render\core\Gameobject.hpp">
+    <ClInclude Include="D:\MyRender\core\Gameobject.hpp">
       <Filter>core</Filter>
     </ClInclude>
-    <ClInclude Include="D:\study\my-render\core\Image.hpp">
+    <ClInclude Include="D:\MyRender\core\Image.hpp">
       <Filter>core</Filter>
     </ClInclude>
-    <ClInclude Include="D:\study\my-render\core\Input.hpp">
+    <ClInclude Include="D:\MyRender\core\Input.hpp">
       <Filter>core</Filter>
     </ClInclude>
-    <ClInclude Include="D:\study\my-render\core\Light.hpp">
+    <ClInclude Include="D:\MyRender\core\Light.hpp">
       <Filter>core</Filter>
     </ClInclude>
-    <ClInclude Include="D:\study\my-render\core\LitMat.hpp">
+    <ClInclude Include="D:\MyRender\core\LitMat.hpp">
       <Filter>core</Filter>
     </ClInclude>
-    <ClInclude Include="D:\study\my-render\core\Material.hpp">
+    <ClInclude Include="D:\MyRender\core\Material.hpp">
       <Filter>core</Filter>
     </ClInclude>
-    <ClInclude Include="D:\study\my-render\core\MaterialCatch.hpp">
+    <ClInclude Include="D:\MyRender\core\MaterialCatch.hpp">
       <Filter>core</Filter>
     </ClInclude>
-    <ClInclude Include="D:\study\my-render\core\Mesh.hpp">
+    <ClInclude Include="D:\MyRender\core\Mesh.hpp">
       <Filter>core</Filter>
     </ClInclude>
-    <ClInclude Include="D:\study\my-render\core\MeshCatch.hpp">
+    <ClInclude Include="D:\MyRender\core\MeshCatch.hpp">
       <Filter>core</Filter>
     </ClInclude>
-    <ClInclude Include="D:\study\my-render\core\MetaData.hpp">
+    <ClInclude Include="D:\MyRender\core\MetaData.hpp">
       <Filter>core</Filter>
     </ClInclude>
-    <ClInclude Include="D:\study\my-render\core\Program.hpp">
+    <ClInclude Include="D:\MyRender\core\Program.hpp">
       <Filter>core</Filter>
     </ClInclude>
-    <ClInclude Include="D:\study\my-render\core\Render.hpp">
+    <ClInclude Include="D:\MyRender\core\Render.hpp">
       <Filter>core</Filter>
     </ClInclude>
-    <ClInclude Include="D:\study\my-render\core\RenderUtils.hpp">
+    <ClInclude Include="D:\MyRender\core\RenderUtils.hpp">
       <Filter>core</Filter>
     </ClInclude>
-    <ClInclude Include="D:\study\my-render\core\Scene.hpp">
+    <ClInclude Include="D:\MyRender\core\Scene.hpp">
       <Filter>core</Filter>
     </ClInclude>
-    <ClInclude Include="D:\study\my-render\core\SimpleLitMat.hpp">
+    <ClInclude Include="D:\MyRender\core\SimpleLitMat.hpp">
       <Filter>core</Filter>
     </ClInclude>
-    <ClInclude Include="D:\study\my-render\core\Texture.hpp">
+    <ClInclude Include="D:\MyRender\core\Texture.hpp">
       <Filter>core</Filter>
     </ClInclude>
-    <ClInclude Include="D:\study\my-render\core\UnLitMat.hpp">
+    <ClInclude Include="D:\MyRender\core\UnLitMat.hpp">
       <Filter>core</Filter>
     </ClInclude>
-    <ClInclude Include="D:\study\my-render\core\Utils.hpp">
+    <ClInclude Include="D:\MyRender\core\Utils.hpp">
       <Filter>core</Filter>
     </ClInclude>
-    <ClInclude Include="D:\study\my-render\gpu\BRDF.hpp">
+    <ClInclude Include="D:\MyRender\gpu\BRDF.hpp">
       <Filter>gpu</Filter>
     </ClInclude>
-    <ClInclude Include="D:\study\my-render\gpu\CommonMaterial.hpp">
+    <ClInclude Include="D:\MyRender\gpu\CommonMaterial.hpp">
       <Filter>gpu</Filter>
     </ClInclude>
-    <ClInclude Include="D:\study\my-render\gpu\GlobalIllumination.hpp">
+    <ClInclude Include="D:\MyRender\gpu\GlobalIllumination.hpp">
       <Filter>gpu</Filter>
     </ClInclude>
-    <ClInclude Include="D:\study\my-render\gpu\ImageBasedLighting.hpp">
+    <ClInclude Include="D:\MyRender\gpu\ImageBasedLighting.hpp">
       <Filter>gpu</Filter>
     </ClInclude>
-    <ClInclude Include="D:\study\my-render\gpu\Lighting.hpp">
+    <ClInclude Include="D:\MyRender\gpu\Lighting.hpp">
       <Filter>gpu</Filter>
     </ClInclude>
-    <ClInclude Include="D:\study\my-render\gpu\LitInput.hpp">
+    <ClInclude Include="D:\MyRender\gpu\LitInput.hpp">
       <Filter>gpu</Filter>
     </ClInclude>
-    <ClInclude Include="D:\study\my-render\gpu\LitShader.hpp">
+    <ClInclude Include="D:\MyRender\gpu\LitShader.hpp">
       <Filter>gpu</Filter>
     </ClInclude>
-    <ClInclude Include="D:\study\my-render\gpu\Macros.hpp">
+    <ClInclude Include="D:\MyRender\gpu\Macros.hpp">
       <Filter>gpu</Filter>
     </ClInclude>
-    <ClInclude Include="D:\study\my-render\gpu\ShaderFunction.hpp">
+    <ClInclude Include="D:\MyRender\gpu\ShaderFunction.hpp">
       <Filter>gpu</Filter>
     </ClInclude>
-    <ClInclude Include="D:\study\my-render\gpu\ShaderGlobal.hpp">
+    <ClInclude Include="D:\MyRender\gpu\ShaderGlobal.hpp">
       <Filter>gpu</Filter>
     </ClInclude>
-    <ClInclude Include="D:\study\my-render\gpu\SimpleLitShader.hpp">
+    <ClInclude Include="D:\MyRender\gpu\SimpleLitShader.hpp">
       <Filter>gpu</Filter>
     </ClInclude>
-    <ClInclude Include="D:\study\my-render\gpu\UnLitShader.hpp">
+    <ClInclude Include="D:\MyRender\gpu\UnLitShader.hpp">
       <Filter>gpu</Filter>
     </ClInclude>
-    <ClInclude Include="D:\study\my-render\base\Attributes.hpp">
+    <ClInclude Include="D:\MyRender\base\Attributes.hpp">
       <Filter>base</Filter>
     </ClInclude>
-    <ClInclude Include="D:\study\my-render\base\Matrix.hpp">
+    <ClInclude Include="D:\MyRender\base\Matrix.hpp">
       <Filter>base</Filter>
     </ClInclude>
-    <ClInclude Include="D:\study\my-render\base\Varyings.hpp">
+    <ClInclude Include="D:\MyRender\base\Varyings.hpp">
       <Filter>base</Filter>
     </ClInclude>
-    <ClInclude Include="D:\study\my-render\base\Vector.hpp">
+    <ClInclude Include="D:\MyRender\base\Vector.hpp">
       <Filter>base</Filter>
     </ClInclude>
-    <ClInclude Include="D:\study\my-render\base\Vertex.hpp">
+    <ClInclude Include="D:\MyRender\base\Vertex.hpp">
       <Filter>base</Filter>
     </ClInclude>
-    <ClInclude Include="D:\study\my-render\base\mikktspace.h">
+    <ClInclude Include="D:\MyRender\base\mikktspace.h">
       <Filter>base</Filter>
     </ClInclude>
-    <ClInclude Include="D:\study\my-render\test\test_mesh_cube.hpp">
+    <ClInclude Include="D:\MyRender\test\test_mesh_cube.hpp">
       <Filter>test</Filter>
     </ClInclude>
-    <ClInclude Include="D:\study\my-render\test\test_model_matrix.hpp">
+    <ClInclude Include="D:\MyRender\test\test_model_matrix.hpp">
       <Filter>test</Filter>
     </ClInclude>
-    <ClInclude Include="D:\study\my-render\test\test_project_matrix.hpp">
+    <ClInclude Include="D:\MyRender\test\test_project_matrix.hpp">
       <Filter>test</Filter>
     </ClInclude>
-    <ClInclude Include="D:\study\my-render\test\test_utils.hpp">
+    <ClInclude Include="D:\MyRender\test\test_utils.hpp">
       <Filter>test</Filter>
     </ClInclude>
-    <ClInclude Include="D:\study\my-render\test\test_view_matrix.hpp">
+    <ClInclude Include="D:\MyRender\test\test_view_matrix.hpp">
       <Filter>test</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <CustomBuild Include="D:\study\my-render\CMakeLists.txt" />
+    <CustomBuild Include="D:\MyRender\CMakeLists.txt" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="base">
-      <UniqueIdentifier>{F7353872-6873-3800-8C3B-30E5768AF5EC}</UniqueIdentifier>
+      <UniqueIdentifier>{DFEB9EB6-B8EA-354F-AADE-1D9C994EA5FE}</UniqueIdentifier>
     </Filter>
     <Filter Include="core">
-      <UniqueIdentifier>{C0D533BC-3C8C-31B2-B4E4-5DE58998BD13}</UniqueIdentifier>
+      <UniqueIdentifier>{700FB858-F57F-310E-ACB3-1A0D91E11683}</UniqueIdentifier>
     </Filter>
     <Filter Include="gpu">
-      <UniqueIdentifier>{C424EDFB-C2DA-3C03-93C3-A2C22B0567F0}</UniqueIdentifier>
+      <UniqueIdentifier>{53A11CEA-5FFA-3164-95BA-F91C89B212A2}</UniqueIdentifier>
     </Filter>
     <Filter Include="test">
-      <UniqueIdentifier>{ECFFB982-3D86-3A91-8148-D55531F13EA0}</UniqueIdentifier>
+      <UniqueIdentifier>{F2D57E30-F771-3E3A-8FBC-2AEA58B93538}</UniqueIdentifier>
     </Filter>
     <Filter Include="test_main">
-      <UniqueIdentifier>{9E878214-8AF0-369C-B8E0-D034BF55F60E}</UniqueIdentifier>
+      <UniqueIdentifier>{B13899D8-A4F7-3440-9E0D-191F85550CBF}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
 </Project>
