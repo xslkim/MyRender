@@ -1,0 +1,20 @@
+{
+	"shader": "Lit",
+	"surface_type": "opaque",
+	"render_face": "front",
+	"base_color": [
+		1,
+		1,
+		1,
+		1
+	],
+	"base_map": "body_basecolor.tga",
+	"normal_map": "BigRock_01_T_N.tga",
+	"specular_map": "",
+	"emission_map": "",
+	"tiling_x": 1,
+	"tiling_y": 1,
+	"alpha_cutoff": false,
+	"metallic":0.4,
+	"smoothness":0.6
+}

@@ -1,0 +1,19 @@
+{
+	"shader": "SimpleLit",
+	"render_face": "front",
+	"base_color": [
+		1,
+		1,
+		1,
+		1
+	],
+	"base_map": "interior_basecolor.tga",
+	"normal_map": "interior_normal.tga",
+	"specular_map": "",
+	"emission_map": "",
+	"tiling_x": 1,
+	"tiling_y": 1,
+	"alpha_cutoff": false,
+	"metallic":0.4,
+	"smoothness":0.6
+}

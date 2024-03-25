@@ -1,0 +1,20 @@
+{
+	"shader": "SimpleLit",
+	"render_face": "front",
+	"base_color": [
+		1,
+		1,
+		1,
+		1
+	],
+	"base_map": "asphalt-02.tga",
+	"normal_map": "",
+	"specular_map": "",
+	"emission_map": "",
+	"tiling_x": 5,
+	"tiling_y": 5,
+	"alpha_cutoff": false,
+	"transparent": false,
+	"metallic": 0.4,
+	"smoothness": 0.6
+}

@@ -1,0 +1,160 @@
+{
+	"camera": {
+		"position": [
+			-6.337441,
+			3.639323,
+			-3.952612
+		],
+		"rotation": [
+			13.844,
+			61.249,
+			0
+		],
+		"back_color": [
+			0,
+			0,
+			0,
+			1
+		],
+		"fov": 60,
+		"near": 0.3,
+		"far": 1000
+	},
+	"light": {
+		"position": [
+			0,
+			0,
+			0
+		],
+		"rotation": [
+			-239,
+			-93.7,
+			0
+		],
+		"color": [
+			1,
+			1,
+			1,
+			1
+		],
+		"intensity": 1,
+		"indirect_mul": 1
+	},
+	"game_objects": [
+		{
+			"position": [
+				0,
+				0,
+				0
+			],
+			"rotation": [
+				0,
+				0,
+				0
+			],
+			"scale": [
+				1,
+				1,
+				1
+			],
+			"mesh": "plane.obj",
+			"material": "panel_material.json"
+		},
+		{
+			"position": [
+				0,
+				0,
+				0
+			],
+			"rotation": [
+				-90,
+				0,
+				0
+			],
+			"scale": [
+				0.01,
+				0.01,
+				0.01
+			],
+			"mesh": "body.obj",
+			"material": "body_material.json"
+		},
+		{
+			"position": [
+				0,
+				0,
+				0
+			],
+			"rotation": [
+				-90,
+				0,
+				0
+			],
+			"scale": [
+				0.01,
+				0.01,
+				0.01
+			],
+			"mesh": "interior.obj",
+			"material": "interior_material.json"
+		},
+		{
+			"position": [
+				0,
+				0,
+				0
+			],
+			"rotation": [
+				-90,
+				0,
+				0
+			],
+			"scale": [
+				0.01,
+				0.01,
+				0.01
+			],
+			"mesh": "windows.obj",
+			"material": "windows_material.json"
+		}
+		,
+		{
+			"position": [
+				200,
+				0,
+				0
+			],
+			"rotation": [
+				90,
+				-90,
+				0
+			],
+			"scale": [
+				1,
+				1,
+				1
+			],
+			"mesh": "sky_panel.obj",
+			"material": "sky_right_material.json"
+		},
+		{
+			"position": [
+				0,
+				0,
+				200
+			],
+			"rotation": [
+				90,
+				180,
+				0
+			],
+			"scale": [
+				1,
+				1,
+				1
+			],
+			"mesh": "sky_panel.obj",
+			"material": "sky_front_material.json"
+		}
+	]
+}
