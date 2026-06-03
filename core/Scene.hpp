@@ -51,7 +51,7 @@ public:
         Render::Get().FrameStart(_camera, _light);
         for (auto& go : _gameObjects) {
             Render::Get().UpdateModelMatrix(go);
-            Render::Get().Draw(_camera, *go.mesh, *go.material);
+            Render::Get().Draw(*go.mesh, *go.material);
         }
 
         // Convert linear float color buffer -> sRGB bytes for SDL

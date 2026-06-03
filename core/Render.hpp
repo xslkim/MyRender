@@ -1,5 +1,8 @@
 #pragma once
 #include <vector>
+#include <array>
+#include <future>
+#include <thread>
 #include <algorithm>
 #include "Vertex.hpp"
 #include "Matrix.hpp"
@@ -41,6 +44,9 @@ public:
         }
         ClearColorBuffer();
         ClearDepthBuffer();
+
+        _numThreads = std::max(1u, std::thread::hardware_concurrency());
+        _pendingTris.reserve(100000);
     }
 
     // -------------------------------------------------------------------------
@@ -205,20 +211,51 @@ public:
     }
 
     // -------------------------------------------------------------------------
-    // Draw call
+    // Draw call — two-pass: vertex/clip (single-threaded) then rasterize (parallel)
+    //
+    // Why two passes?
+    //   Vertex shading WRITES gpu:: namespace globals (matrices, textures, etc.).
+    //   Fragment shading only READS those globals.
+    //   So we can safely rasterize on multiple threads once vertex shading is done.
     // -------------------------------------------------------------------------
 
-    void Draw(const Camera& /*cam*/, const Mesh& mesh, const Material& mat)
+    void Draw(const Mesh& mesh, const Material& mat)
     {
         mat.UpdateGpuParameter();
+
+        // Pass 1 (single-threaded): vertex shader + Sutherland-Hodgman clip
+        _pendingTris.clear();
         for (const auto& tri : mesh.triangles)
-            DrawTriangle(tri[0], tri[1], tri[2], mat);
+            CollectTriangle(tri[0], tri[1], tri[2], mat);
+
+        if (_pendingTris.empty()) return;
+
+        // Pass 2 (multi-threaded): rasterize by horizontal Y strip.
+        // Each thread owns a distinct Y range -> no pixel is written by two threads.
+        // Fragment shaders only read gpu:: globals -> no data race.
+        int rowsPerThread = (Config::kScreenHeight + (int)_numThreads - 1) / (int)_numThreads;
+
+        std::vector<std::future<void>> futures;
+        futures.reserve(_numThreads);
+
+        for (unsigned t = 0; t < _numThreads; ++t) {
+            int yStart = (int)t * rowsPerThread;
+            int yEnd   = std::min(yStart + rowsPerThread, Config::kScreenHeight);
+            if (yStart >= Config::kScreenHeight) break;
+
+            futures.push_back(std::async(std::launch::async,
+                [this, &mat, yStart, yEnd]() {
+                    for (const auto& tri : _pendingTris)
+                        RasterizeTri(tri[0], tri[1], tri[2], mat, yStart, yEnd);
+                }));
+        }
+
+        for (auto& f : futures) f.get();
     }
 
 private:
     // -------------------------------------------------------------------------
-    // Per-frame allocator for Attributes / Varyings
-    // Resets each frame so we avoid per-triangle heap allocation.
+    // Per-frame allocator for Attributes / Varyings (used in single-threaded pass)
     // -------------------------------------------------------------------------
     static const int kBufferSize = 1024 * 1024;
 
@@ -264,62 +301,22 @@ private:
     void ClearDepthBuffer() { memcpy(DepthBuffer, _defaultDepthBuf, kDepthBufferSize * sizeof(float)); }
 
     // -------------------------------------------------------------------------
-    // Rasterization
+    // Thread count (set at Init time)
+    // -------------------------------------------------------------------------
+    unsigned _numThreads = 1;
+
+    // Screen-space triangles collected during the single-threaded vertex pass.
+    // Stored as value types so threads can safely read them in parallel.
+    using ScreenTri = std::array<Varyings, 3>;
+    std::vector<ScreenTri> _pendingTris;
+
+    // -------------------------------------------------------------------------
+    // Geometry helpers
     // -------------------------------------------------------------------------
 
     bool IsFrontFace(float3 v0, float3 v1, float3 v2)
     {
         return vector_cross(v1 - v0, v2 - v0).z < 0;
-    }
-
-    // Rasterize a single triangle that is fully in clip space
-    void DrawTriangle(const Varyings* v0, const Varyings* v1, const Varyings* v2, const Material& mat)
-    {
-        float3 ndc0, ndc1, ndc2;
-        float4 s0 = RenderUtils::ClipPositionToScreenPosition(v0->positionCS, ndc0);
-        float4 s1 = RenderUtils::ClipPositionToScreenPosition(v1->positionCS, ndc1);
-        float4 s2 = RenderUtils::ClipPositionToScreenPosition(v2->positionCS, ndc2);
-
-        if (!IsFrontFace(ndc0, ndc1, ndc2)) return;
-
-        int minX = (int)std::min(s0.x, std::min(s1.x, s2.x));
-        int minY = (int)std::min(s0.y, std::min(s1.y, s2.y));
-        int maxX = (int)std::max(s0.x, std::max(s1.x, s2.x));
-        int maxY = (int)std::max(s0.y, std::max(s1.y, s2.y));
-
-        for (int y = minY; y <= maxY; ++y) {
-            for (int x = minX; x <= maxX; ++x) {
-                float3 b = RenderUtils::BarycentricCoordinate(float2(x, y), s0.xy, s1.xy, s2.xy);
-                if (b.x < RenderUtils::NegativeInfinity ||
-                    b.y < RenderUtils::NegativeInfinity ||
-                    b.z < RenderUtils::NegativeInfinity) continue;
-
-                // Perspective-correct interpolation:
-                // https://blog.csdn.net/Motarookie/article/details/124284471
-                float z = 1.0f / (b.x / s0.w + b.y / s1.w + b.z / s2.w);
-
-                float depth = b.x * s0.z + b.y * s1.z + b.z * s2.z;
-                if (!gpu::DepthTest(depth, GetDepth(x, y))) continue;
-
-                float b0 = b.x / s0.w * z;
-                float b1 = b.y / s1.w * z;
-                float b2 = b.z / s2.w * z;
-
-                Varyings lerpV;
-                InterpolateVaryings(*v0, *v1, *v2, b0, b1, b2, lerpV);
-
-                float4 color = mat.fragment_shader(lerpV);
-
-                RenderUtils::BlendMode blend = mat._data.transparent
-                    ? RenderUtils::BlendMode::AlphaBlend
-                    : RenderUtils::BlendMode::None;
-                color = RenderUtils::BlendColors(color, GetColor(x, y), blend);
-                SetColor(x, y, color);
-
-                if (gpu::z_write && !mat._data.transparent)
-                    SetDepth(x, y, depth);
-            }
-        }
     }
 
     void InterpolateVaryings(const Varyings& v0, const Varyings& v1, const Varyings& v2,
@@ -335,7 +332,7 @@ private:
         out.fogFactor   = b0 * v0.fogFactor   + b1 * v1.fogFactor   + b2 * v2.fogFactor;
     }
 
-    // Sutherland-Hodgman clipping against one plane
+    // Sutherland-Hodgman: clip a polygon against one frustum plane
     std::vector<Varyings*> ClipWithPlane(RenderUtils::ClipPlane plane,
                                          std::vector<Varyings*> verts)
     {
@@ -365,9 +362,12 @@ private:
         return out;
     }
 
-    // Full triangle pipeline: vertex shader -> clip -> rasterize
-    void DrawTriangle(const Vertex& vtx0, const Vertex& vtx1, const Vertex& vtx2,
-                      const Material& mat)
+    // -------------------------------------------------------------------------
+    // Pass 1: vertex shader + clip -> push screen-space triangles to _pendingTris
+    // Called single-threaded (may write gpu:: globals via vertex shader).
+    // -------------------------------------------------------------------------
+    void CollectTriangle(const Vertex& vtx0, const Vertex& vtx1, const Vertex& vtx2,
+                         const Material& mat)
     {
         Attributes* a0 = GetOneAttributes(); mat.InitAttributes(vtx0, a0);
         Attributes* a1 = GetOneAttributes(); mat.InitAttributes(vtx1, a1);
@@ -381,7 +381,7 @@ private:
             RenderUtils::IsVisible(v1->positionCS) &&
             RenderUtils::IsVisible(v2->positionCS))
         {
-            DrawTriangle(v0, v1, v2, mat);
+            _pendingTris.push_back({ *v0, *v1, *v2 });
             return;
         }
 
@@ -395,8 +395,65 @@ private:
         verts = ClipWithPlane(RenderUtils::ClipPlane::Z_NEAR,   verts);
         verts = ClipWithPlane(RenderUtils::ClipPlane::Z_FAR,    verts);
 
-        // Fan-triangulate the clipped polygon
+        // Fan-triangulate and store copies (threads will read these)
         for (int i = 0; i + 2 < (int)verts.size(); ++i)
-            DrawTriangle(verts[0], verts[i + 1], verts[i + 2], mat);
+            _pendingTris.push_back({ *verts[0], *verts[i + 1], *verts[i + 2] });
+    }
+
+    // -------------------------------------------------------------------------
+    // Pass 2: rasterize one screen-space triangle within Y strip [yStart, yEnd).
+    // Called from multiple threads simultaneously — must not write gpu:: globals.
+    // -------------------------------------------------------------------------
+    void RasterizeTri(const Varyings& v0, const Varyings& v1, const Varyings& v2,
+                      const Material& mat, int yStart, int yEnd)
+    {
+        float3 ndc0, ndc1, ndc2;
+        float4 s0 = RenderUtils::ClipPositionToScreenPosition(v0.positionCS, ndc0);
+        float4 s1 = RenderUtils::ClipPositionToScreenPosition(v1.positionCS, ndc1);
+        float4 s2 = RenderUtils::ClipPositionToScreenPosition(v2.positionCS, ndc2);
+
+        if (!IsFrontFace(ndc0, ndc1, ndc2)) return;
+
+        // Bounding box, clamped to screen and this thread's Y strip
+        int minX = std::max(0,                       (int)std::min(s0.x, std::min(s1.x, s2.x)));
+        int maxX = std::min(Config::kScreenWidth - 1, (int)std::max(s0.x, std::max(s1.x, s2.x)));
+        int minY = std::max(yStart,                   (int)std::min(s0.y, std::min(s1.y, s2.y)));
+        int maxY = std::min(yEnd - 1,                 (int)std::max(s0.y, std::max(s1.y, s2.y)));
+
+        if (minX > maxX || minY > maxY) return;
+
+        for (int y = minY; y <= maxY; ++y) {
+            for (int x = minX; x <= maxX; ++x) {
+                float3 b = RenderUtils::BarycentricCoordinate(float2(x, y), s0.xy, s1.xy, s2.xy);
+                if (b.x < RenderUtils::NegativeInfinity ||
+                    b.y < RenderUtils::NegativeInfinity ||
+                    b.z < RenderUtils::NegativeInfinity) continue;
+
+                // Perspective-correct interpolation
+                // https://blog.csdn.net/Motarookie/article/details/124284471
+                float z = 1.0f / (b.x / s0.w + b.y / s1.w + b.z / s2.w);
+
+                float depth = b.x * s0.z + b.y * s1.z + b.z * s2.z;
+                if (!gpu::DepthTest(depth, GetDepth(x, y))) continue;
+
+                float b0 = b.x / s0.w * z;
+                float b1 = b.y / s1.w * z;
+                float b2 = b.z / s2.w * z;
+
+                Varyings lerpV;
+                InterpolateVaryings(v0, v1, v2, b0, b1, b2, lerpV);
+
+                float4 color = mat.fragment_shader(lerpV);
+
+                RenderUtils::BlendMode blend = mat._data.transparent
+                    ? RenderUtils::BlendMode::AlphaBlend
+                    : RenderUtils::BlendMode::None;
+                color = RenderUtils::BlendColors(color, GetColor(x, y), blend);
+                SetColor(x, y, color);
+
+                if (gpu::z_write && !mat._data.transparent)
+                    SetDepth(x, y, depth);
+            }
+        }
     }
 };
