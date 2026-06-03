@@ -35,7 +35,7 @@
 
 --- narration ---
 它是一个用 C++ 写的 **软渲染器**
-完整复刻了 Unity URP 的渲染效果
+尽量对齐 Unity URP 的典型渲染效果
 而这个系列
 就是讲给会 C++、但没学过渲染的你
 你不需要任何图形学基础
@@ -194,7 +194,7 @@ Unity Inspector 的相机 Transform 面板，Position、Rotation 数值，下方
 连坐标系都保持一致
 左手坐标系
 旋转用欧拉角
-旋转顺序也跟 Unity 完全一样
+旋转结果也尽量和 Unity 对齐
 这样
 才能拿 Unity 当标准答案来对照
 
