@@ -4,6 +4,7 @@
 #include <fstream>
 #include <chrono>
 #include <iostream>
+#include <cmath>
 #include "Render.hpp"
 #include "Camera.hpp"
 #include "Light.hpp"
@@ -28,20 +29,50 @@ public:
             go.Load(goData);
             _gameObjects.push_back(go);
         }
+
+        // Derive orbit parameters from the initial camera pose in the JSON.
+        //
+        // Convention used by UpdateViewMatrix:
+        //   world forward = (sin(ry), ..., cos(rx)*cos(ry))
+        // For a camera at XZ angle alpha looking at the origin:
+        //   sin(ry) = -sin(alpha)  =>  ry = alpha + 180 degrees
+        // So: rotYOffset = rotation.y - alpha * (180/PI)
+        //
+        _orbitRadius    = std::sqrt(_camera.Position.x * _camera.Position.x +
+                                    _camera.Position.z * _camera.Position.z);
+        _orbitHeight    = _camera.Position.y;
+        _orbitAngle     = std::atan2(_camera.Position.x, _camera.Position.z); // radians
+        _orbitRotYOffset = _camera.Rotation.y - _orbitAngle * (180.0f / PI);
+
+        _lastUpdateTime = std::chrono::high_resolution_clock::now();
         Render::Get().Init();
     }
 
     void Update(float /*deltaMs*/)
     {
-        auto now      = std::chrono::high_resolution_clock::now();
-        float seconds = std::chrono::duration_cast<std::chrono::duration<float>>(now - _lastFrameTime).count();
-        if (seconds >= 1.0f) {
-            std::cout << "FPS: " << (_frames / seconds) << "\n";
-            _frames        = 0;
-            _lastFrameTime = now;
-        } else {
-            ++_frames;
+        auto  now = std::chrono::high_resolution_clock::now();
+        float dt  = std::chrono::duration_cast<std::chrono::duration<float>>(now - _lastUpdateTime).count();
+        _lastUpdateTime = now;
+        dt = std::min(dt, 0.1f); // cap first-frame spike
+
+        // FPS display (once per second)
+        _fpsAccum += dt;
+        ++_fpsFrames;
+        if (_fpsAccum >= 1.0f) {
+            std::cout << "FPS: " << static_cast<int>(_fpsFrames / _fpsAccum) << "\n";
+            _fpsFrames = 0;
+            _fpsAccum  = 0.0f;
         }
+
+        // Orbit: advance angle then rebuild camera position and Y rotation.
+        // X and Z positions trace a circle of _orbitRadius around the origin.
+        // _orbitRotYOffset keeps the look-at direction aligned with the orbit.
+        _orbitAngle += _orbitSpeed * dt;
+
+        _camera.Position.x = _orbitRadius * std::sin(_orbitAngle);
+        _camera.Position.y = _orbitHeight;
+        _camera.Position.z = _orbitRadius * std::cos(_orbitAngle);
+        _camera.Rotation.y = _orbitAngle * (180.0f / PI) + _orbitRotYOffset;
     }
 
     void Render()
@@ -72,9 +103,21 @@ public:
     }
 
 private:
-    Camera                    _camera;
-    Light                     _light;
-    std::vector<GameObject>   _gameObjects;
-    int                       _frames        = 0;
-    std::chrono::high_resolution_clock::time_point _lastFrameTime;
+    Camera                  _camera;
+    Light                   _light;
+    std::vector<GameObject> _gameObjects;
+
+    // FPS counter
+    float _fpsAccum  = 0.0f;
+    int   _fpsFrames = 0;
+
+    // Per-frame wall-clock time (used for smooth animation delta)
+    std::chrono::high_resolution_clock::time_point _lastUpdateTime;
+
+    // Orbit animation state
+    float _orbitRadius     = 6.0f;   // horizontal distance from car center
+    float _orbitHeight     = 2.6f;   // camera Y (stays fixed during orbit)
+    float _orbitAngle      = 0.0f;   // current angle in radians
+    float _orbitRotYOffset = 180.0f; // constant offset so camera always faces center
+    float _orbitSpeed      = 0.5f;   // radians/second; full circle ~12.6s
 };
