@@ -1,0 +1,7 @@
+{
+	"InstallScripts" : 
+	[
+		"G:/MyRender/build/cmake_install.cmake"
+	],
+	"Parallel" : false
+}
