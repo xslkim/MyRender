@@ -4,9 +4,13 @@
 #include "ShaderGlobal.hpp"
 #include <string>
 
-using namespace std;
 namespace gpu
 {
+    // HLSL-style lerp: mirrors the built-in lerp(a, b, t) = a + (b-a)*t
+    inline half   lerp(half a,   half b,   half t)   { return a + (b - a) * t; }
+    inline float3 lerp(float3 a, float3 b, float t)  { return a + (b - a) * t; }
+    inline float4 lerp(float4 a, float4 b, float t)  { return a + (b - a) * t; }
+
     float4 mul(float4x4 mat, float4 v)
     {
         return mat * v;

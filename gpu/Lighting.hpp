@@ -5,7 +5,7 @@
 #include "ShaderFunction.hpp"
 #include <string>
 
-using namespace std;
+
 namespace gpu
 {
 

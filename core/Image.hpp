@@ -1,4 +1,5 @@
 #pragma once
+#include <string>
 #include "Vector.hpp"
 #include "Utils.hpp"
 #include <math.h>
@@ -9,7 +10,7 @@ public:
     int width, height, channels;
     unsigned char* ldr_buffer;
 
-	Image(const string& fileName) 
+    Image(const std::string& fileName)
     {
         load_tga_image(fileName.c_str());
     }

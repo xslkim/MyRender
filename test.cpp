@@ -1,5 +1,6 @@
 ﻿
 #include "test.h"
+using namespace std;
 #include "Matrix.hpp"
 #include "test/test_view_matrix.hpp"
 #include "test/test_model_matrix.hpp"

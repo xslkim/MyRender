@@ -2,7 +2,7 @@
 #include "ShaderFunction.hpp"
 #include "Lighting.hpp"
 
-using namespace std;
+
 namespace gpu
 {
 

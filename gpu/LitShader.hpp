@@ -2,7 +2,7 @@
 #include "ShaderFunction.hpp"
 #include "LitInput.hpp"
 
-using namespace std;
+
 namespace gpu
 {
     half Alpha(half albedoAlpha, half4 color, half cutoff)

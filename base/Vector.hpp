@@ -423,9 +423,7 @@ inline Vector<N, T> vector_clamp(const Vector<N, T>& a, T minx = 0, T maxx = 1) 
 }
 
 Vec2f vec2_lerp(Vec2f a, Vec2f b, float t) {
-	float x = lerp(a.x, b.x, t);
-	float y = lerp(a.y, b.y, t);
-	return Vec2f(x, y);
+	return Vec2f(a.x + (b.x - a.x) * t, a.y + (b.y - a.y) * t);
 }
 
 
@@ -489,10 +487,7 @@ Vec3f vec3_normalize(Vec3f v) {
 }
 
 Vec3f vec3_lerp(Vec3f a, Vec3f b, float t) {
-	float x = lerp(a.x, b.x, t);
-	float y = lerp(a.y, b.y, t);
-	float z = lerp(a.z, b.z, t);
-	return vec3_new(x, y, z);
+	return a + (b - a) * t;
 }
 
 Vec4f vec4_new(float x, float y, float z, float w) {
@@ -525,11 +520,7 @@ Vec4f vec4_div(Vec4f v, float divisor) {
 }
 
 Vec4f vec4_lerp(Vec4f a, Vec4f b, float t) {
-	float x = lerp(a.x, b.x, t);
-	float y = lerp(a.y, b.y, t);
-	float z = lerp(a.z, b.z, t);
-	float w = lerp(a.w, b.w, t);
-	return vec4_new(x, y, z, w);
+	return a + (b - a) * t;
 }
 
 Vec4f vec4_saturate(Vec4f v) {
@@ -569,14 +560,10 @@ inline static Vec4f vector_from_color(uint32_t rgba) {
 	return out;
 }
 
-float3 lerp(float3 a, float3 b, float t)
-{
-	return vector_lerp<3, float>(a, b, t);
-}
 
 real Max3(real a, real b, real c)
 {
-	return max(max(a, b), c);
+	return std::max(std::max(a, b), c);
 }
 
 

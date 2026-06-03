@@ -2,7 +2,7 @@
 #include "Vector.hpp"
 #include "ShaderFunction.hpp"
 
-using namespace std;
+
 namespace gpu {
 
 

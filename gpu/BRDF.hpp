@@ -3,7 +3,7 @@
 #include "CommonMaterial.hpp"
 #include "Macros.hpp"
 
-using namespace std;
+
 namespace gpu {
 
 

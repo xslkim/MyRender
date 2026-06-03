@@ -5,7 +5,6 @@
 #include "Program.hpp"
 #include <string>
 
-using namespace std;
 namespace gpu
 {
     // Structs
@@ -205,7 +204,7 @@ namespace gpu
         return false;
     }
 
-    bool IsLightingFeatureEnabled(string feature)
+    bool IsLightingFeatureEnabled(std::string feature)
     {
         return false;
     }
