@@ -16,19 +16,19 @@ include_directories(
     ${CMAKE_SOURCE_DIR}/include
     ${CMAKE_SOURCE_DIR}/include/nlohmann
     ${CMAKE_SOURCE_DIR}/SDL/include
-    ${CMAKE_SOURCE_DIR}/core
-	${CMAKE_SOURCE_DIR}/gpu
-    ${CMAKE_SOURCE_DIR}/base
+    ${CMAKE_SOURCE_DIR}/src/core
+	${CMAKE_SOURCE_DIR}/src/gpu
+    ${CMAKE_SOURCE_DIR}/src/base
 )
 
 link_directories(${CMAKE_SOURCE_DIR}/SDL/lib)
 
 
 #set(CORE_FILES core/Vector.hpp )
-file(GLOB CORE_FILES "core/*.h" "core/*.hpp" "core/*.cpp")
-file(GLOB BASE_FILSE "base/*.hpp" "base/*.h" "base/*.cpp" "base/*.c")
-file(GLOB GPU_FILSE "gpu/*.hpp" "gpu/*.h" "gpu/*.cpp")
-set(SOURCES MyRender.cpp MyRender.h)
+file(GLOB CORE_FILES "src/core/*.h" "src/core/*.hpp" "src/core/*.cpp")
+file(GLOB BASE_FILSE "src/base/*.hpp" "src/base/*.h" "src/base/*.cpp" "src/base/*.c")
+file(GLOB GPU_FILSE "src/gpu/*.hpp" "src/gpu/*.h" "src/gpu/*.cpp")
+set(SOURCES src/MyRender.cpp src/MyRender.h)
 MESSAGE( STATUS "this CORE_FILES key = ${CORE_FILES}.")
 MESSAGE( STATUS "this HELP_FILSE key = ${HELP_FILSE}.")
 MESSAGE( STATUS "this GPU_FILSE key = ${GPU_FILSE}.")

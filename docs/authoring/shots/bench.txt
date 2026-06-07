@@ -1,0 +1,4 @@
+single_thread_ms=193.68
+threads=20
+multi_thread_ms=42.37
+speedup=4.57

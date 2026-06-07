@@ -1,4 +1,0 @@
-G:/MyRender/build/CMakeFiles/MyRender.dir
-G:/MyRender/build/CMakeFiles/test.dir
-G:/MyRender/build/CMakeFiles/ALL_BUILD.dir
-G:/MyRender/build/CMakeFiles/ZERO_CHECK.dir
