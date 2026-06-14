@@ -69,10 +69,10 @@
 >>> 这就是"换个角度看" #B04
 @enter: fade
 @exit: fade
-@visual: image(../assets/orbit_2.png)
+@visual: image(./assets/orbit_2.png)
 
 --- visual ---
-（实际使用 ../assets/orbit_2.png：相机绕到另一侧看小车的真实渲染画面。）
+（实际使用 ./assets/orbit_2.png：相机绕到另一侧看小车的真实渲染画面。）
 
 --- narration ---
 所谓相机绕着车转
@@ -139,10 +139,10 @@
 >>> 裁剪的真实样子 #B07
 @enter: fade-up
 @exit: fade
-@visual: image(../assets/wire_clip.png)
+@visual: image(./assets/wire_clip.png)
 
 --- visual ---
-（实际使用 ../assets/wire_clip.png：拉近视野后车身线框在屏幕边缘被整齐切断，左上角有明显空白切口。）
+（实际使用 ./assets/wire_clip.png：拉近视野后车身线框在屏幕边缘被整齐切断，左上角有明显空白切口。）
 
 --- narration ---
 这不是比喻
@@ -162,10 +162,10 @@
 >>> 终点：铺成一格格像素 #B08
 @enter: fade
 @exit: fade
-@visual: image(../assets/wire.png)
+@visual: image(./assets/wire.png)
 
 --- visual ---
-（实际使用 ../assets/wire.png：车身三角网格线框，强调一个个三角形面片。）
+（实际使用 ./assets/wire.png：车身三角网格线框，强调一个个三角形面片。）
 
 --- narration ---
 旅程的终点
@@ -211,10 +211,10 @@
 >>> 谁在前，谁就挡住谁 #B10
 @enter: fade
 @exit: fade
-@visual: image(../assets/depth.png)
+@visual: image(./assets/depth.png)
 
 --- visual ---
-（实际使用 ../assets/depth.png：小车深度图，近处亮、远处暗。）
+（实际使用 ./assets/depth.png：小车深度图，近处亮、远处暗。）
 
 --- narration ---
 最后还有个常识问题

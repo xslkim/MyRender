@@ -1,10 +1,10 @@
 >>> 开场钩子 #B01
 @enter: fade-up
 @exit: fade
-@visual: video(../assets/orbit.mp4)
+@visual: video(./assets/orbit.mp4)
 
 --- visual ---
-（实际使用 ../assets/orbit.mp4：相机环绕一辆锈迹小车缓慢转一圈。）
+（实际使用 ./assets/orbit.mp4：相机环绕一辆锈迹小车缓慢转一圈。）
 
 --- narration ---
 这辆车
@@ -100,10 +100,10 @@
 >>> 模型，其实是三角形拼的 #B05
 @enter: fade-up
 @exit: fade
-@visual: image(../assets/wire.png)
+@visual: image(./assets/wire.png)
 
 --- visual ---
-（实际使用 ../assets/wire.png：小车的三角网格线框，亮蓝色边，可见车身由大量三角形拼成。）
+（实际使用 ./assets/wire.png：小车的三角网格线框，亮蓝色边，可见车身由大量三角形拼成。）
 
 --- narration ---
 说"模型是三角形拼的"
@@ -123,10 +123,10 @@
 >>> 这是它最终的样子 #B06
 @enter: fade
 @exit: fade
-@visual: image(../assets/final_front.png)
+@visual: image(./assets/final_front.png)
 
 --- visual ---
-（实际使用 ../assets/final_front.png：完整渲染的小车，车漆、车窗、地面、天空俱全。）
+（实际使用 ./assets/final_front.png：完整渲染的小车，车漆、车窗、地面、天空俱全。）
 
 --- narration ---
 而这
@@ -144,10 +144,10 @@
 >>> 我们拿 Unity 当尺子 #B07
 @enter: fade-up
 @exit: fade
-@visual: image(../assets/unity_inspector.jpg)
+@visual: image(./assets/unity_inspector.jpg)
 
 --- visual ---
-（实际使用 ../assets/unity_inspector.jpg：Unity 编辑器里相机的参数面板与对应画面。）
+（实际使用 ./assets/unity_inspector.jpg：Unity 编辑器里相机的参数面板与对应画面。）
 
 --- narration ---
 不过自己画

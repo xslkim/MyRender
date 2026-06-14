@@ -29,10 +29,10 @@
 >>> 模型其实就是三角形 #B02
 @enter: fade
 @exit: fade
-@visual: image(../assets/wire.png)
+@visual: image(./assets/wire.png)
 
 --- visual ---
-（实际使用 ../assets/wire.png：小车三角网格线框，亮蓝色边。）
+（实际使用 ./assets/wire.png：小车三角网格线框，亮蓝色边。）
 
 --- narration ---
 先看输入
@@ -78,10 +78,10 @@
 >>> 换角度 = 重算 V 矩阵 #B04
 @enter: fade
 @exit: fade
-@visual: image(../assets/orbit_3.png)
+@visual: image(./assets/orbit_3.png)
 
 --- visual ---
-（实际使用 ../assets/orbit_3.png：相机绕到又一侧看小车的真实渲染。）
+（实际使用 ./assets/orbit_3.png：相机绕到又一侧看小车的真实渲染。）
 
 --- narration ---
 观察矩阵在干嘛
@@ -128,10 +128,10 @@
 >>> 验证二：裁剪的真实切口 #B06
 @enter: fade
 @exit: fade
-@visual: image(../assets/wire_clip.png)
+@visual: image(./assets/wire_clip.png)
 
 --- visual ---
-（实际使用 ../assets/wire_clip.png：拉近视野后线框在屏幕边缘被整齐切断，左上角有空白切口。）
+（实际使用 ./assets/wire_clip.png：拉近视野后线框在屏幕边缘被整齐切断，左上角有空白切口。）
 
 --- narration ---
 看证据
@@ -180,10 +180,10 @@
 >>> 对照四：深度测试 #B08
 @enter: fade
 @exit: fade
-@visual: image(../assets/depth.png)
+@visual: image(./assets/depth.png)
 
 --- visual ---
-（实际使用 ../assets/depth.png：小车深度缓冲灰度图，近白远黑。）
+（实际使用 ./assets/depth.png：小车深度缓冲灰度图，近白远黑。）
 
 --- narration ---
 第四项，深度测试

@@ -24,10 +24,10 @@
 >>> 第一层：物体本来的颜色 #B02
 @enter: fade
 @exit: fade
-@visual: image(../assets/albedo.png)
+@visual: image(./assets/albedo.png)
 
 --- visual ---
-（实际使用 ../assets/albedo.png：小车纯底色，无光照，车身平涂橙色。）
+（实际使用 ./assets/albedo.png：小车纯底色，无光照，车身平涂橙色。）
 
 --- narration ---
 先把光关掉
@@ -69,10 +69,10 @@
 >>> 第二层：表面"朝哪儿" #B04
 @enter: fade
 @exit: fade
-@visual: image(../assets/normal_geom.png)
+@visual: image(./assets/normal_geom.png)
 
 --- visual ---
-（实际使用 ../assets/normal_geom.png：小车几何法线可视化，按朝向染成平滑的蓝绿紫。）
+（实际使用 ./assets/normal_geom.png：小车几何法线可视化，按朝向染成平滑的蓝绿紫。）
 
 --- narration ---
 光要算明暗
@@ -95,10 +95,10 @@
 >>> 凭空长出的细节 #B05
 @enter: fade-up
 @exit: fade
-@visual: image(../assets/normal_mapped.png)
+@visual: image(./assets/normal_mapped.png)
 
 --- visual ---
-（实际使用 ../assets/normal_mapped.png：叠加法线贴图后，车身表面出现大量凹凸、锈斑、焊缝。）
+（实际使用 ./assets/normal_mapped.png：叠加法线贴图后，车身表面出现大量凹凸、锈斑、焊缝。）
 
 --- narration ---
 再看这张
@@ -146,10 +146,10 @@
 >>> 全部叠起来 #B07
 @enter: fade-up
 @exit: fade
-@visual: image(../assets/final_front.png)
+@visual: image(./assets/final_front.png)
 
 --- visual ---
-（实际使用 ../assets/final_front.png：完整渲染结果，底色+法线+光照全部叠加。）
+（实际使用 ./assets/final_front.png：完整渲染结果，底色+法线+光照全部叠加。）
 
 --- narration ---
 现在把这几层叠到一起
@@ -168,10 +168,10 @@
 >>> 它到底像不像真的 · 拿 Unity 比 #B08
 @enter: fade
 @exit: fade
-@visual: image(../assets/unity_ref_1.jpg)
+@visual: image(./assets/unity_ref_1.jpg)
 
 --- visual ---
-（实际使用 ../assets/unity_ref_1.jpg：Unity 原生渲染的小车，作为对照标准。）
+（实际使用 ./assets/unity_ref_1.jpg：Unity 原生渲染的小车，作为对照标准。）
 
 --- narration ---
 我们说算得对
@@ -190,10 +190,10 @@ Unity
 >>> 我们算的 #B09
 @enter: fade
 @exit: fade
-@visual: image(../assets/myrender_1.jpg)
+@visual: image(./assets/myrender_1.jpg)
 
 --- visual ---
-（实际使用 ../assets/myrender_1.jpg：MyRender 软渲染输出，与 Unity 高度接近。）
+（实际使用 ./assets/myrender_1.jpg：MyRender 软渲染输出，与 Unity 高度接近。）
 
 --- narration ---
 这就是我们的结果
@@ -212,10 +212,10 @@ Unity
 >>> 还有个麻烦：太慢 #B10
 @enter: fade-up
 @exit: fade
-@visual: image(../assets/threads.png)
+@visual: image(./assets/threads.png)
 
 --- visual ---
-（实际使用 ../assets/threads.png：渲染画面上叠加彩色水平条带，每条代表一个线程负责的区域。）
+（实际使用 ./assets/threads.png：渲染画面上叠加彩色水平条带，每条代表一个线程负责的区域。）
 
 --- narration ---
 全靠处理器算
@@ -238,10 +238,10 @@ Unity
 >>> 系列收尾 #B11
 @enter: fade
 @exit: fade
-@visual: image(../assets/final_front.png)
+@visual: image(./assets/final_front.png)
 
 --- visual ---
-（实际使用 ../assets/final_front.png：完整渲染结果，作为系列收尾。）
+（实际使用 ./assets/final_front.png：完整渲染结果，作为系列收尾。）
 
 --- narration ---
 三集的旅行

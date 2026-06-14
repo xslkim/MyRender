@@ -1,10 +1,10 @@
 >>> 开场 · 两张图能不能对上 #B01
 @enter: fade-up
 @exit: fade
-@visual: video(../assets/orbit.mp4)
+@visual: video(./assets/orbit.mp4)
 
 --- visual ---
-（实际使用 ../assets/orbit.mp4：相机环绕小车一圈，CPU 软渲染画面。）
+（实际使用 ./assets/orbit.mp4：相机环绕小车一圈，CPU 软渲染画面。）
 
 --- narration ---
 这辆车
@@ -145,10 +145,10 @@ Lit、SimpleLit、UnLit
 >>> 对照一：场景参数 = Inspector #B06
 @enter: fade
 @exit: fade
-@visual: image(../assets/unity_inspector.jpg)
+@visual: image(./assets/unity_inspector.jpg)
 
 --- visual ---
-（实际使用 ../assets/unity_inspector.jpg：Unity 相机的 Transform / 参数面板与对应画面。）
+（实际使用 ./assets/unity_inspector.jpg：Unity 相机的 Transform / 参数面板与对应画面。）
 
 --- narration ---
 来看第一个对照
@@ -170,10 +170,10 @@ near、far
 >>> 对照二：最终画面 #B07
 @enter: fade
 @exit: fade
-@visual: image(../assets/unity_ref_1.jpg)
+@visual: image(./assets/unity_ref_1.jpg)
 
 --- visual ---
-（实际使用 ../assets/unity_ref_1.jpg：Unity 原生渲染的小车，标准答案。）
+（实际使用 ./assets/unity_ref_1.jpg：Unity 原生渲染的小车，标准答案。）
 
 --- narration ---
 这是 Unity 渲染出来的车
@@ -190,10 +190,10 @@ near、far
 >>> 我们复刻的画面 #B08
 @enter: fade
 @exit: fade
-@visual: image(../assets/myrender_1.jpg)
+@visual: image(./assets/myrender_1.jpg)
 
 --- visual ---
-（实际使用 ../assets/myrender_1.jpg：MyRender 软渲染输出，与 Unity 高度接近。）
+（实际使用 ./assets/myrender_1.jpg：MyRender 软渲染输出，与 Unity 高度接近。）
 
 --- narration ---
 这是我们的结果

@@ -31,10 +31,10 @@ UnLit，不受光，纯底色，天空盒用它
 >>> 第一层：albedo 底色 #B02
 @enter: fade
 @exit: fade
-@visual: image(../assets/albedo.png)
+@visual: image(./assets/albedo.png)
 
 --- visual ---
-（实际使用 ../assets/albedo.png：小车纯 albedo 底色，无光照。）
+（实际使用 ./assets/albedo.png：小车纯 albedo 底色，无光照。）
 
 --- narration ---
 最底层
@@ -54,10 +54,10 @@ UnLit，不受光，纯底色，天空盒用它
 >>> 底色定位靠 UV #B03
 @enter: fade
 @exit: fade
-@visual: image(../assets/uv.png)
+@visual: image(./assets/uv.png)
 
 --- visual ---
-（实际使用 ../assets/uv.png：小车 UV 可视化，红到绿渐变。）
+（实际使用 ./assets/uv.png：小车 UV 可视化，红到绿渐变。）
 
 --- narration ---
 贴图怎么贴准
@@ -76,10 +76,10 @@ UnLit，不受光，纯底色，天空盒用它
 >>> 第二层：法线 · 几何法线 #B04
 @enter: fade-up
 @exit: fade
-@visual: image(../assets/normal_geom.png)
+@visual: image(./assets/normal_geom.png)
 
 --- visual ---
-（实际使用 ../assets/normal_geom.png：几何法线可视化，平滑色块。）
+（实际使用 ./assets/normal_geom.png：几何法线可视化，平滑色块。）
 
 --- narration ---
 光照要算明暗
@@ -98,10 +98,10 @@ UnLit，不受光，纯底色，天空盒用它
 >>> 法线贴图：和 Unity 一样的难点 #B05
 @enter: fade
 @exit: fade
-@visual: image(../assets/normal_mapped.png)
+@visual: image(./assets/normal_mapped.png)
 
 --- visual ---
-（实际使用 ../assets/normal_mapped.png：叠加法线贴图后，表面凹凸、锈斑、焊缝丰富。）
+（实际使用 ./assets/normal_mapped.png：叠加法线贴图后，表面凹凸、锈斑、焊缝丰富。）
 
 --- narration ---
 加上法线贴图
@@ -179,10 +179,10 @@ UnLit，不受光，纯底色，天空盒用它
 >>> 验收 · Unity vs 我们 #B08
 @enter: fade
 @exit: fade
-@visual: image(../assets/unity_ref_2.jpg)
+@visual: image(./assets/unity_ref_2.jpg)
 
 --- visual ---
-（实际使用 ../assets/unity_ref_2.jpg：Unity 原生渲染的小车，另一角度，标准答案。）
+（实际使用 ./assets/unity_ref_2.jpg：Unity 原生渲染的小车，另一角度，标准答案。）
 
 --- narration ---
 算对了没有
@@ -199,10 +199,10 @@ UnLit，不受光，纯底色，天空盒用它
 >>> 我们复刻的结果 #B09
 @enter: fade
 @exit: fade
-@visual: image(../assets/myrender_2.jpg)
+@visual: image(./assets/myrender_2.jpg)
 
 --- visual ---
-（实际使用 ../assets/myrender_2.jpg：MyRender 软渲染输出，另一角度，与 Unity 接近。）
+（实际使用 ./assets/myrender_2.jpg：MyRender 软渲染输出，另一角度，与 Unity 接近。）
 
 --- narration ---
 这是我们的结果
@@ -223,10 +223,10 @@ UnLit，不受光，纯底色，天空盒用它
 >>> 最后一题 · 太慢怎么办 #B10
 @enter: fade-up
 @exit: fade
-@visual: image(../assets/threads.png)
+@visual: image(./assets/threads.png)
 
 --- visual ---
-（实际使用 ../assets/threads.png：渲染画面叠加彩色水平条带，每条是一个线程负责的区域。）
+（实际使用 ./assets/threads.png：渲染画面叠加彩色水平条带，每条是一个线程负责的区域。）
 
 --- narration ---
 纯 CPU 复刻
@@ -279,10 +279,10 @@ UnLit，不受光，纯底色，天空盒用它
 >>> 系列收尾 #B12
 @enter: fade
 @exit: fade
-@visual: image(../assets/final_front.png)
+@visual: image(./assets/final_front.png)
 
 --- visual ---
-（实际使用 ../assets/final_front.png：完整渲染结果，作为系列收尾。）
+（实际使用 ./assets/final_front.png：完整渲染结果，作为系列收尾。）
 
 --- narration ---
 三集到这里就结束了
