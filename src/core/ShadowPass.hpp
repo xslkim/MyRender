@@ -1,6 +1,7 @@
 #pragma once
 #include <algorithm>
 #include <utility>
+#include <cstdio>
 #include "SceneModel.hpp"
 #include "Render.hpp"
 #include "ShaderGlobal.hpp"
@@ -117,9 +118,26 @@ inline float4x4 ComputeLightVP(const SceneModel& model)
     return lightVP;
 }
 
+// A single ortho shadow map can only resolve so much. Fit to the whole scene and
+// a large outdoor level (Garden spans ~100m) gets a few cm per texel — far coarser
+// than interior detail — so every surface self-shadows and the room goes dark.
+// Above this AABB diagonal we skip shadows entirely rather than render wrong ones.
+// (Proper large scenes want cascades / a camera-focused map; out of scope here.)
+static const float kMaxShadowSceneDiagonal = 60.0f;
+
 // Run the full shadow depth pass: compute light camera, clear depth, draw all opaque objects.
 inline void Render(const SceneModel& model)
 {
+    auto [mn, mx] = ComputeSceneAABB(model);
+    float diagonal = vector_length(mx - mn);
+    if (diagonal > kMaxShadowSceneDiagonal) {
+        gpu::_SHADOWS_ENABLED = false;
+        std::printf("[Shadow] scene AABB diagonal %.1fm exceeds %.0fm; shadows "
+                    "disabled (single map can't resolve it).\n",
+                    diagonal, kMaxShadowSceneDiagonal);
+        return;
+    }
+
     ComputeLightVP(model);
     ::Render::Get().BeginShadowPass();
 
