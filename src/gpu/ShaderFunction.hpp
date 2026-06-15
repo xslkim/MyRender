@@ -452,17 +452,45 @@ namespace gpu
         return light;
     }
 
+    // 3×3 PCF lookup into the CPU shadow depth buffer.
+    // shadowCoord is in light clip space (set per-pixel from positionWS in LitInitializeInputData).
     half MainLightRealtimeShadow(float4 shadowCoord)
     {
-#if !defined(MAIN_LIGHT_CALCULATE_SHADOWS)
-        return half(1.0);
-#elif defined(_MAIN_LIGHT_SHADOWS_SCREEN) && !defined(_SURFACE_TYPE_TRANSPARENT)
-        return SampleScreenSpaceShadowmap(shadowCoord);
-#else
-        ShadowSamplingData shadowSamplingData = GetMainLightShadowSamplingData();
-        half4 shadowParams = GetMainLightShadowParams();
-        return SampleShadowmap(TEXTURE2D_ARGS(_MainLightShadowmapTexture, sampler_MainLightShadowmapTexture), shadowCoord, shadowSamplingData, shadowParams, false);
-#endif
+        if (!_SHADOWS_ENABLED || _ShadowDepth == nullptr)
+            return half(1.0f);
+        if (shadowCoord.w <= 0.0f)
+            return half(1.0f);
+
+        float invW = 1.0f / shadowCoord.w;
+        float ndcX = shadowCoord.x * invW;
+        float ndcY = shadowCoord.y * invW;
+        float ndcZ = shadowCoord.z * invW;
+
+        float u = ndcX * 0.5f + 0.5f;
+        float v = ndcY * 0.5f + 0.5f;
+        // Subtract the bias so a surface that is itself the closest caster
+        // (receiverDepth == mapDepth) still counts as lit; adding it would
+        // self-shadow the entire scene.
+        float receiverDepth = ndcZ * 0.5f + 0.5f - _ShadowBias;
+
+        // Outside shadow map = not in shadow (light-space fringe).
+        if (u < 0.0f || u > 1.0f || v < 0.0f || v > 1.0f)
+            return half(1.0f);
+
+        // 3×3 PCF — sample 9 neighbours and average.
+        float shadow = 0.0f;
+        float texelSize = 1.0f / (float)kShadowRes;
+        for (int dy = -1; dy <= 1; ++dy) {
+            for (int dx = -1; dx <= 1; ++dx) {
+                int sx = (int)((u + dx * texelSize) * (kShadowRes - 1) + 0.5f);
+                int sy = (int)((v + dy * texelSize) * (kShadowRes - 1) + 0.5f);
+                sx = std::max(0, std::min(kShadowRes - 1, sx));
+                sy = std::max(0, std::min(kShadowRes - 1, sy));
+                float mapDepth = _ShadowDepth[sy * kShadowRes + sx];
+                shadow += (receiverDepth < mapDepth) ? 1.0f : 0.0f;
+            }
+        }
+        return half(shadow / 9.0f);
     }
 
     half MixRealtimeAndBakedShadows(half realtimeShadow, half bakedShadow, half shadowFade)
@@ -484,11 +512,11 @@ namespace gpu
         half bakedShadow = half(1.0);
 #endif
 
-#ifdef MAIN_LIGHT_CALCULATE_SHADOWS
-        half shadowFade = GetMainLightShadowFade(positionWS);
-#else
-        half shadowFade = half(1.0);
-#endif
+        // shadowFade ramps the realtime shadow out toward the shadow distance.
+        // We don't implement distance fade, so: 0 = use the realtime shadow as-is
+        // when shadows are on; 1 = fully faded (no shadow) when off. The original
+        // hardcoded 1.0 silently discarded every realtime shadow (lerp(rt,1,1)=1).
+        half shadowFade = _SHADOWS_ENABLED ? half(0.0) : half(1.0);
 
         return MixRealtimeAndBakedShadows(realtimeShadow, bakedShadow, shadowFade);
     }

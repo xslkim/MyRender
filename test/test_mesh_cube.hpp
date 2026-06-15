@@ -48,7 +48,7 @@ void test_mesh_cube()
 		//for (int i = 0; i < mesh.triangles.size(); ++i)
 		//{
 		//	auto triangle = mesh.triangles[i];
-		//	assert(triangle.size() == 3);
+		//	CHECK(triangle.size() == 3);
 		//	for (int j = 0; j < triangle.size(); ++j)
 		//	{
 		//		Vertex v = triangle[j];
@@ -84,21 +84,21 @@ void test_mesh_cube()
 			Vec4f tangle = mesh.triangles[index / 3][index % 3].tangent;
 			
 			
-			assert(equal(pos.x, pos_x));
-			assert(equal(pos.y, pos_y));
-			assert(equal(pos.z, pos_z));
+			CHECK(equal(pos.x, pos_x));
+			CHECK(equal(pos.y, pos_y));
+			CHECK(equal(pos.z, pos_z));
 
-			assert(equal(uv.x, uv_x));
-			assert(equal(uv.y, uv_y));
+			CHECK(equal(uv.x, uv_x));
+			CHECK(equal(uv.y, uv_y));
 
-			assert(equal(normal.x, normal_x));
-			assert(equal(normal.y, normal_y));
-			assert(equal(normal.z, normal_z));
+			CHECK(equal(normal.x, normal_x));
+			CHECK(equal(normal.y, normal_y));
+			CHECK(equal(normal.z, normal_z));
 
-			assert(equal(tangle.x, tangent_x, 0.03f));
-			assert(equal(tangle.y, tangent_y, 0.01f));
-			assert(equal(tangle.z, tangent_z, 0.02f));
-			assert(equal(tangle.w, tangent_w));
+			CHECK(equal(tangle.x, tangent_x, 0.03f));
+			CHECK(equal(tangle.y, tangent_y, 0.01f));
+			CHECK(equal(tangle.z, tangent_z, 0.02f));
+			CHECK(equal(tangle.w, tangent_w));
 		}
 	}
 }

@@ -4,19 +4,19 @@
 #include "ShaderGlobal.hpp"
 #include "test_utils.hpp"
 
-// T2.1 — LitMat::UpdateGpuParameter must flip the URP keyword toggles to match
+// T2.1 -LitMat::UpdateGpuParameter must flip the URP keyword toggles to match
 // which maps are bound. Verified without file I/O by poking the map pointers.
 inline void test_material_toggles()
 {
-    Texture2D dummy; // width=0, buffer=nullptr — fine, we only need a non-null ptr
+    Texture2D dummy; // width=0, buffer=nullptr -fine, we only need a non-null ptr
 
     // No maps -> every map toggle off.
     LitMat bare;
     bare.UpdateGpuParameter();
-    assert(gpu::_SPECGLOSSMAP == false);
-    assert(gpu::_OCCLUSIONMAP == false);
-    assert(gpu::_EMISSION     == false);
-    assert(gpu::_NORMALMAP    == false);
+    CHECK(gpu::_SPECGLOSSMAP == false);
+    CHECK(gpu::_OCCLUSIONMAP == false);
+    CHECK(gpu::_EMISSION     == false);
+    CHECK(gpu::_NORMALMAP    == false);
 
     // All maps bound -> toggles on, pointers forwarded.
     LitMat full;
@@ -29,13 +29,13 @@ inline void test_material_toggles()
     full.smoothnessFromAlbedo = true;
     full.UpdateGpuParameter();
 
-    assert(gpu::_NORMALMAP    == true && gpu::_BumpMap     == &dummy);
-    assert(gpu::_SPECGLOSSMAP == true && gpu::_SpecGlossMap == &dummy);
-    assert(gpu::_OCCLUSIONMAP == true && gpu::_OcclusionMap == &dummy);
-    assert(gpu::_SMOOTHNESS_TEXTURE_ALBEDO_CHANNEL_A == true);
-    assert(gpu::_EMISSION == true);                 // from non-black emissionColor
-    assert(equal(gpu::_BumpScale, 0.5f));
-    assert(equal(gpu::_OcclusionStrength, 0.7f));
+    CHECK(gpu::_NORMALMAP    == true && gpu::_BumpMap     == &dummy);
+    CHECK(gpu::_SPECGLOSSMAP == true && gpu::_SpecGlossMap == &dummy);
+    CHECK(gpu::_OCCLUSIONMAP == true && gpu::_OcclusionMap == &dummy);
+    CHECK(gpu::_SMOOTHNESS_TEXTURE_ALBEDO_CHANNEL_A == true);
+    CHECK(gpu::_EMISSION == true);                 // from non-black emissionColor
+    CHECK(equal(gpu::_BumpScale, 0.5f));
+    CHECK(equal(gpu::_OcclusionStrength, 0.7f));
 
     std::cout << "[PASS] test_material_toggles\n";
 }

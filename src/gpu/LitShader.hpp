@@ -68,6 +68,11 @@ namespace gpu
         //暂时不支持，烘焙环境光
         //inputData.bakedGI = SAMPLE_GI(input.staticLightmapUV, input.vertexSH, inputData.normalWS);
         inputData.normalizedScreenSpaceUV = GetNormalizedScreenSpaceUV(input.positionCS);
+
+        // Shadow coordinate: project world position into light clip space per-pixel.
+        inputData.shadowCoord = _SHADOWS_ENABLED
+            ? _LightVP * float4(inputData.positionWS.x, inputData.positionWS.y, inputData.positionWS.z, 1.0f)
+            : float4(0.0f, 0.0f, 0.0f, 0.0f);
     }
 
 

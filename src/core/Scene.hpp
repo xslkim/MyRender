@@ -12,6 +12,7 @@
 #include "UnitySceneLoader.hpp"
 #include "LegacySceneLoader.hpp"
 #include "LegacyTransforms.hpp"
+#include "ShadowPass.hpp"
 
 // Scene owns a matrix-based SceneModel and feeds it to Render. Two front ends:
 //   - LoadUnity:  static snapshot from the Unity exporter (no animation).
@@ -73,6 +74,9 @@ public:
     void Render()
     {
         if (_legacyOrbit) RebuildLegacyCamera();
+
+        // Shadow depth pass (Unity scenes only; uses its own depth buffer).
+        if (!_legacyOrbit) ShadowPass::Render(_model);
 
         Render::Get().SetCamera(_model.camera);
         Render::Get().BeginFrame();

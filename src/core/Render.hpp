@@ -98,6 +98,31 @@ public:
     void SetFrontFaceSign(float sign) { _frontFaceSign = sign; }
 
     // -------------------------------------------------------------------------
+    // Shadow depth pass — call before BeginFrame, writes to a separate buffer.
+    // DrawDepthOnly transforms vertices with gpu::_LightVP and rasterizes depth
+    // only; no fragment shader, no color writes.
+    // -------------------------------------------------------------------------
+
+    void BeginShadowPass()
+    {
+        if (!_shadowDepth)
+            _shadowDepth = new float[gpu::kShadowRes * gpu::kShadowRes];
+        std::fill(_shadowDepth, _shadowDepth + gpu::kShadowRes * gpu::kShadowRes, 1.0f);
+        gpu::_ShadowDepth = _shadowDepth;
+    }
+
+    void DrawDepthOnly(const Mesh& mesh, const Mesh::SubMesh& sub, const float4x4& localToWorld)
+    {
+        float4x4 mvp = gpu::_LightVP * localToWorld;
+        _shadowPendingTris.clear();
+        int end = sub.start + sub.count;
+        for (int i = sub.start; i < end; ++i)
+            CollectShadowTriangle(mesh.triangles[i], mvp);
+        for (const auto& tri : _shadowPendingTris)
+            RasterizeShadowTri(tri[0], tri[1], tri[2]);
+    }
+
+    // -------------------------------------------------------------------------
     // Buffer access
     // -------------------------------------------------------------------------
 
@@ -238,6 +263,11 @@ private:
     using ScreenTri = std::array<Varyings, 3>;
     std::vector<ScreenTri> _pendingTris;
 
+    // Shadow map resources
+    float* _shadowDepth = nullptr;
+    using ShadowTri = std::array<float4, 3>;
+    std::vector<ShadowTri> _shadowPendingTris;
+
     // -------------------------------------------------------------------------
     // Geometry helpers
     // -------------------------------------------------------------------------
@@ -291,6 +321,83 @@ private:
             }
         }
         return out;
+    }
+
+    // -------------------------------------------------------------------------
+    // Shadow geometry: clip polygons as float4 clip positions only (no varyings),
+    // then rasterize depth into _shadowDepth. Single-threaded — shadow maps are
+    // typically small compared to the screen work and don't need parallelism here.
+    // -------------------------------------------------------------------------
+
+    std::vector<float4> ClipShadowPolygon(RenderUtils::ClipPlane plane,
+                                          std::vector<float4> verts)
+    {
+        std::vector<float4> out;
+        int n = (int)verts.size();
+        for (int i = 0; i < n; ++i) {
+            float4 cur  = verts[i];
+            float4 prev = verts[(i - 1 + n) % n];
+            bool curIn  = RenderUtils::IsInsidePlane(plane, cur);
+            bool prevIn = RenderUtils::IsInsidePlane(plane, prev);
+            if (curIn != prevIn) {
+                float t = RenderUtils::get_intersect_ratio(prev, cur, plane);
+                out.push_back(vec4_lerp(prev, cur, t));
+            }
+            if (curIn) out.push_back(cur);
+        }
+        return out;
+    }
+
+    void CollectShadowTriangle(const std::array<Vertex, 3>& tri, const float4x4& mvp)
+    {
+        std::vector<float4> verts = {
+            mvp * float4(tri[0].position.x, tri[0].position.y, tri[0].position.z, 1.0f),
+            mvp * float4(tri[1].position.x, tri[1].position.y, tri[1].position.z, 1.0f),
+            mvp * float4(tri[2].position.x, tri[2].position.y, tri[2].position.z, 1.0f),
+        };
+        verts = ClipShadowPolygon(RenderUtils::ClipPlane::W_PLANE,  verts);
+        verts = ClipShadowPolygon(RenderUtils::ClipPlane::X_RIGHT,  verts);
+        verts = ClipShadowPolygon(RenderUtils::ClipPlane::X_LEFT,   verts);
+        verts = ClipShadowPolygon(RenderUtils::ClipPlane::Y_TOP,    verts);
+        verts = ClipShadowPolygon(RenderUtils::ClipPlane::Y_BOTTOM, verts);
+        verts = ClipShadowPolygon(RenderUtils::ClipPlane::Z_NEAR,   verts);
+        verts = ClipShadowPolygon(RenderUtils::ClipPlane::Z_FAR,    verts);
+        for (int i = 0; i + 2 < (int)verts.size(); ++i)
+            _shadowPendingTris.push_back({ verts[0], verts[i + 1], verts[i + 2] });
+    }
+
+    void RasterizeShadowTri(float4 cs0, float4 cs1, float4 cs2)
+    {
+        auto clipToShadow = [](float4 cs) -> float4 {
+            float invW = 1.0f / cs.w;
+            float nx = cs.x * invW, ny = cs.y * invW, nz = cs.z * invW;
+            return float4(
+                (nx + 1.0f) * 0.5f * (gpu::kShadowRes - 1),
+                (ny + 1.0f) * 0.5f * (gpu::kShadowRes - 1),
+                nz * 0.5f + 0.5f,
+                cs.w);
+        };
+        float4 s0 = clipToShadow(cs0);
+        float4 s1 = clipToShadow(cs1);
+        float4 s2 = clipToShadow(cs2);
+
+        int minX = std::max(0,                    (int)std::min(s0.x, std::min(s1.x, s2.x)));
+        int maxX = std::min(gpu::kShadowRes - 1,  (int)std::max(s0.x, std::max(s1.x, s2.x)));
+        int minY = std::max(0,                    (int)std::min(s0.y, std::min(s1.y, s2.y)));
+        int maxY = std::min(gpu::kShadowRes - 1,  (int)std::max(s0.y, std::max(s1.y, s2.y)));
+        if (minX > maxX || minY > maxY) return;
+
+        for (int y = minY; y <= maxY; ++y) {
+            for (int x = minX; x <= maxX; ++x) {
+                float3 b = RenderUtils::BarycentricCoordinate(float2(x, y), s0.xy, s1.xy, s2.xy);
+                if (b.x < RenderUtils::NegativeInfinity ||
+                    b.y < RenderUtils::NegativeInfinity ||
+                    b.z < RenderUtils::NegativeInfinity) continue;
+                float depth = b.x * s0.z + b.y * s1.z + b.z * s2.z;
+                float& stored = _shadowDepth[y * gpu::kShadowRes + x];
+                if (depth < stored) stored = depth;
+            }
+        }
     }
 
     // -------------------------------------------------------------------------

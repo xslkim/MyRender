@@ -127,6 +127,13 @@ namespace gpu
     // Texture filtering: bilinear by default (closer to Unity); point is kept as
     // a switch for the tutorial visuals.
     bool g_bilinear = true;
+
+    // Shadow map
+    static const int kShadowRes = 2048;
+    float4x4 _LightVP;                // light view-projection for shadow coord transform
+    float*   _ShadowDepth = nullptr;  // pointer to kShadowRes² depth buffer in [0,1]
+    float    _ShadowBias  = 0.002f;   // constant depth bias to prevent self-shadowing acne
+    bool     _SHADOWS_ENABLED = false;
     Color _BaseColor;
     Color _SpecColor;
     real _Cutoff;

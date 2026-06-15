@@ -10,6 +10,7 @@ using namespace std;
 #include "test/test_mesh_binary.hpp"
 #include "test/test_vertex_transform.hpp"
 #include "test/test_material_toggles.hpp"
+#include "test/test_shadow.hpp"
 
 
 int main(int argc, char* argv[])
@@ -23,5 +24,7 @@ int main(int argc, char* argv[])
 	test_mesh_binary();
 	test_vertex_transform();
 	test_material_toggles();
+	test_shadow_aabb_fit();
+	test_shadow_depth_pass();
 	return 0;
 }

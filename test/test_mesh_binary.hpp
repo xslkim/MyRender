@@ -9,19 +9,21 @@ inline void test_mesh_binary()
     Mesh cube("assets/unity_export/ValidationScene/meshes/Cube_120.mesh");
 
     // 24 verts, 36 indices -> 12 triangles, single submesh.
-    assert(cube.triangles.size() == 12);
-    assert(cube.submeshes.size() == 1);
-    assert(cube.submeshes[0].start == 0);
-    assert(cube.submeshes[0].count == 12);
+    CHECK(cube.triangles.size() == 12);
+    CHECK(cube.submeshes.size() == 1);
+    CHECK(cube.submeshes[0].start == 0);
+    CHECK(cube.submeshes[0].count == 12);
 
-    // Triangle 0 (indices 0,2,3) first vertex, read verbatim (no x-flip).
+    // Triangle 0 first vertex, read verbatim (no x-flip). This vertex sits on
+    // the +X face: position (0.5,-0.5,0.5), normal (1,0,0), tangent (-1,0,0,-1).
     const Vertex& v0 = cube.triangles[0][0];
-    assert(equal(v0.position.x,  0.5f));
-    assert(equal(v0.position.y, -0.5f));
-    assert(equal(v0.position.z,  0.5f));
-    assert(equal(v0.normal.z,    1.0f));
-    assert(equal(v0.tangent.x,  -1.0f));
-    assert(equal(v0.tangent.w,  -1.0f));
+    CHECK(equal(v0.position.x,  0.5f));
+    CHECK(equal(v0.position.y, -0.5f));
+    CHECK(equal(v0.position.z,  0.5f));
+    CHECK(equal(v0.normal.x,     1.0f));
+    CHECK(equal(v0.normal.z,     0.0f));
+    CHECK(equal(v0.tangent.x,  -1.0f));
+    CHECK(equal(v0.tangent.w,  -1.0f));
 
     std::cout << "[PASS] test_mesh_binary\n";
 }
