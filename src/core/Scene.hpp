@@ -122,6 +122,14 @@ public:
         }
     }
 
+    // Advance skinned animations by a fixed amount (used by headless capture to
+    // grab a specific point in the clip deterministically).
+    void AdvanceAnimations(float dt)
+    {
+        for (auto& obj : _model.objects)
+            if (obj.skinned) obj.player.Advance(dt);
+    }
+
     // ----- capture helpers (legacy tutorial path) -----
     Camera& GetCamera() { return _camera; }
     Light&  GetLight()  { return _light; }

@@ -156,7 +156,8 @@ static void runCapture(const std::string& outDir)
 }
 
 // Headless one-shot of a Unity-exported scene -> single BMP. No window.
-static void runCaptureUnity(const std::string& sceneDir, const std::string& outFile, int debugView = gpu::DV_NONE)
+static void runCaptureUnity(const std::string& sceneDir, const std::string& outFile,
+                            int debugView = gpu::DV_NONE, float animTime = 0.0f)
 {
     const int W = Config::kScreenWidth;
     const int H = Config::kScreenHeight;
@@ -170,6 +171,7 @@ static void runCaptureUnity(const std::string& sceneDir, const std::string& outF
     scene.ScreenBuffer = buf;
     scene.LoadUnity("scene.json");
     gpu::g_debugView = debugView;
+    if (animTime > 0.0f) scene.AdvanceAnimations(animTime); // seek into the clip
     scene.Render();
     writeBMP(outFile, buf, W, H);
     printf("unity capture -> %s\n", outFile.c_str());
@@ -209,7 +211,8 @@ int main(int argc, char* argv[])
         std::string dir = (argc > 2) ? argv[2] : "assets/unity_export/ValidationScene";
         std::string out = (argc > 3) ? argv[3] : "out_validation.bmp";
         int dv = (argc > 4) ? atoi(argv[4]) : gpu::DV_NONE; // 1=albedo 2=normalGeom 3=normalMapped 4=uv
-        runCaptureUnity(dir, out, dv);
+        float at = (argc > 5) ? (float)atof(argv[5]) : 0.0f; // animation seek time (s)
+        runCaptureUnity(dir, out, dv, at);
         SDL_Quit();
         return 0;
     }
