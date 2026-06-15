@@ -50,6 +50,14 @@ public:
         m->fragment_shader = gpu::LitFragmentShader;
         m->LoadAsset(a);
 
+        // Shader Graph materials map to Fallback and don't expose _Cull, so the
+        // exporter defaults them to back-face cull. Most SG materials here are
+        // double-sided foliage/cards; render them two-sided so leaves/petals don't
+        // vanish from one side. Opaque solids are unaffected (depth test hides the
+        // back faces anyway).
+        if (a.shaderModel == "Fallback")
+            m->cull = Material::Cull::Off;
+
         _materials[rel_path] = m;
         return m;
     }
