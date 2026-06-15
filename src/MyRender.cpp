@@ -227,8 +227,14 @@ int main(int argc, char* argv[])
         return 0;
     }
 
-    // Unity scene mode: MyRender.exe --unity [sceneDir]
+    // Window is always this size; the internal render resolution may be lower
+    // (set via the --unity scale arg) and SDL stretches it up to the window.
+    const int winW = 960, winH = 540;
+
+    // Unity scene mode: MyRender.exe --unity [sceneDir] [resScale]
     //   sceneDir defaults to the exported ValidationScene; must contain scene.json.
+    //   resScale (0..1) lowers the internal framebuffer for heavy scenes, e.g.
+    //   `--unity assets/unity_export/GardenScene 0.5` renders at 480x270.
     bool        useUnity = false;
     std::string unityDir = "assets/unity_export/ValidationScene/";
     if (argc > 1 && std::string(argv[1]) == "--unity") {
@@ -236,61 +242,57 @@ int main(int argc, char* argv[])
         if (argc > 2) unityDir = argv[2];
         if (unityDir.back() != '/' && unityDir.back() != '\\') unityDir += '/';
         Config::scene_path = unityDir;
+
+        if (argc > 3) {
+            float s = (float)atof(argv[3]);
+            if (s > 0.05f && s <= 1.0f) {
+                Config::kScreenWidth  = (int)(winW * s);
+                Config::kScreenHeight = (int)(winH * s);
+            }
+        }
     }
 
-    const int W = Config::kScreenWidth;
-    const int H = Config::kScreenHeight;
+    // Internal render resolution (== window unless --unity scaled it down).
+    const int rW = Config::kScreenWidth;
+    const int rH = Config::kScreenHeight;
 
-    unsigned char* frameBuffer = new unsigned char[W * H * 4];
-    memset(frameBuffer, 0, W * H * 4);
+    unsigned char* frameBuffer = new unsigned char[rW * rH * 4];
+    memset(frameBuffer, 0, rW * rH * 4);
 
-    SDL_Window*   window       = SDL_CreateWindow("MyRender", W, H, SDL_WINDOW_OPENGL);
+    SDL_Window*   window       = SDL_CreateWindow("MyRender", winW, winH, SDL_WINDOW_OPENGL);
     SDL_Renderer* renderer     = SDL_CreateRenderer(window, NULL, 0);
     SDL_Texture*  frameTexture = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_RGBA32,
-                                                   SDL_TEXTUREACCESS_TARGET, W, H);
+                                                   SDL_TEXTUREACCESS_TARGET, rW, rH);
 
     Scene scene;
     scene.ScreenBuffer = frameBuffer;
-    if (useUnity) scene.LoadUnity("scene.json");
+    if (useUnity) { scene.LoadUnity("scene.json"); scene.EnableFlyCamera(); }
     else          scene.LoadLegacy(Config::scene_path + "car_scene_2.json");
 
-    while (true) {
+    bool running = true;
+    while (running) {
+        // Drain all pending events so key state is current (frames can be slow).
         SDL_Event e;
-        SDL_PollEvent(&e);
-
-        if (e.type == SDL_EVENT_QUIT) {
-            break;
-        }
-        else if (e.type == SDL_EVENT_KEY_DOWN) {
-            Input::Get().SetKeyDown(SDL_GetKeyName(e.key.keysym.sym));
-        }
-        else if (e.type == SDL_EVENT_MOUSE_BUTTON_DOWN) {
-            float x, y;
-            SDL_GetMouseState(&x, &y);
-            printf("MouseDown: x:%3.0f y:%3.0f\n", x, y);
-        }
-        else if (e.type == SDL_EVENT_MOUSE_BUTTON_UP) {
-            float x, y;
-            SDL_GetMouseState(&x, &y);
-            printf("MouseUp: x:%3.0f y:%3.0f\n", x, y);
-        }
-        else if (e.type == SDL_EVENT_MOUSE_WHEEL) {
-            printf("MouseWheel: y:%3.0f\n", e.wheel.y);
-        }
-        else if (e.type == SDL_EVENT_MOUSE_MOTION) {
-            float x, y;
-            SDL_GetMouseState(&x, &y);
-            printf("MouseMove: x:%3.0f y:%3.0f\n", x, y);
+        while (SDL_PollEvent(&e)) {
+            if (e.type == SDL_EVENT_QUIT)
+                running = false;
+            else if (e.type == SDL_EVENT_KEY_DOWN) {
+                if (e.key.keysym.sym == SDLK_ESCAPE) running = false;
+                else Input::Get().SetKeyDown(SDL_GetKeyName(e.key.keysym.sym));
+            }
+            else if (e.type == SDL_EVENT_KEY_UP) {
+                Input::Get().SetKeyUp(SDL_GetKeyName(e.key.keysym.sym));
+            }
         }
 
         scene.Update(17);
         scene.Render();
 
-        if (SDL_UpdateTexture(frameTexture, NULL, frameBuffer, W * 4) != 0)
+        if (SDL_UpdateTexture(frameTexture, NULL, frameBuffer, rW * 4) != 0)
             printf("SDL_UpdateTexture error: %s\n", SDL_GetError());
 
         SDL_RenderClear(renderer);
-        SDL_RenderTexture(renderer, frameTexture, NULL, NULL);
+        SDL_RenderTexture(renderer, frameTexture, NULL, NULL); // stretches to window
         SDL_RenderPresent(renderer);
         SDL_Delay(10);
     }

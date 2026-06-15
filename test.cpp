@@ -12,6 +12,7 @@ using namespace std;
 #include "test/test_material_toggles.hpp"
 #include "test/test_shadow.hpp"
 #include "test/test_skinning.hpp"
+#include "test/test_flycamera.hpp"
 
 
 int main(int argc, char* argv[])
@@ -28,5 +29,6 @@ int main(int argc, char* argv[])
 	test_shadow_aabb_fit();
 	test_shadow_depth_pass();
 	test_skinning();
+	test_flycamera();
 	return 0;
 }

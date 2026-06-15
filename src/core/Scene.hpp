@@ -13,6 +13,7 @@
 #include "LegacySceneLoader.hpp"
 #include "LegacyTransforms.hpp"
 #include "ShadowPass.hpp"
+#include "FlyCamera.hpp"
 
 // Scene owns a matrix-based SceneModel and feeds it to Render. Two front ends:
 //   - LoadUnity:  static snapshot from the Unity exporter (no animation).
@@ -34,6 +35,14 @@ public:
         for (const auto& o : _model.objects) if (o.skinned) _sceneHasSkin = true;
         Render::Get().Init();
         Render::Get().SetFrontFaceSign(-1.0f); // verbatim Unity winding
+    }
+
+    // Switch a Unity scene to free-flight control (seeded from the exported
+    // camera, so the first frame matches the export). WASD/QE move, arrows look.
+    void EnableFlyCamera()
+    {
+        _flyEnabled = true;
+        _flyCam.InitFrom(_model.camera);
     }
 
     void LoadLegacy(const std::string& json_path)
@@ -76,6 +85,15 @@ public:
         // Advance skinned animations by wall-clock time.
         for (auto& obj : _model.objects)
             if (obj.skinned) obj.player.Advance(dt);
+
+        // Free-flight camera (Unity scenes): drive the model camera's view from
+        // keyboard input. Projection stays the exported one; the shadow map is in
+        // light space so moving the camera doesn't invalidate the cached shadows.
+        if (_flyEnabled) {
+            _flyCam.Update(dt);
+            _model.camera.view     = _flyCam.View();
+            _model.camera.position = _flyCam.position;
+        }
     }
 
     void Render()
@@ -159,6 +177,9 @@ private:
     bool       _legacyOrbit     = false;
     bool       _shadowsComputed  = false; // static-scene shadow map cached after frame 1
     bool       _sceneHasSkin      = false; // skinned objects force per-frame shadow recompute
+
+    FlyCamera  _flyCam;                    // free-flight camera (Unity scenes)
+    bool       _flyEnabled = false;
 
     // Legacy camera/light (only used by the orbit/capture path).
     Camera _camera;
