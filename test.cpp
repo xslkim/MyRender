@@ -11,6 +11,7 @@ using namespace std;
 #include "test/test_vertex_transform.hpp"
 #include "test/test_material_toggles.hpp"
 #include "test/test_shadow.hpp"
+#include "test/test_skinning.hpp"
 
 
 int main(int argc, char* argv[])
@@ -26,5 +27,6 @@ int main(int argc, char* argv[])
 	test_material_toggles();
 	test_shadow_aabb_fit();
 	test_shadow_depth_pass();
+	test_skinning();
 	return 0;
 }

@@ -112,6 +112,31 @@ Skin path (`hasSkin`) is **v2**; v1 exporter writes `flags = hasUV1|hasColor` su
 
 ---
 
+## .anim (binary)
+
+A baked skinning-matrix animation. The exporter samples the clip per frame and
+writes, for each bone, the **skinning matrix** `S[b] = bone.localToWorld · bindpose[b]`
+(maps a skinned vertex from mesh-local straight to world space). The runtime does
+linear blend skinning `posWS = Σ_b w_b · (S[b] · posOS)` — no curve evaluation,
+no separate object `matrix` for skinned objects (design §9.2).
+
+```
+offset  type      field
+0       char[4]   magic = "MRAN"
+4       u16       version = 1
+6       u16       flags = 0
+8       f32       fps
+12      u32       frameCount
+16      u32       boneCount
+
+frameCount x boneCount x f32[16]   // S[frame][bone], row-major 4x4
+```
+
+Bindposes are baked into `S` here, so the runtime ignores the `.mesh` bindpose block.
+A skinned object in scene.json sets `"skinned": true` and (TODO) names its `.anim`.
+
+---
+
 ## .mat.json
 
 ```jsonc

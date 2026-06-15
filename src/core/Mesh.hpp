@@ -19,6 +19,12 @@ public:
     struct SubMesh { int start = 0; int count = 0; };
     std::vector<SubMesh> submeshes;
 
+    // Skin: set when the .mesh carries a skin block. The runtime needs only the
+    // per-vertex boneIndex/boneWeight (the bindpose is baked into the .anim's
+    // skinning matrices at export time, so it is skipped here).
+    bool skinned   = false;
+    int  boneCount = 0;
+
     Mesh(const std::string& fileName)
     {
         std::string ext = std::filesystem::path(fileName.c_str()).extension().string();
@@ -59,8 +65,9 @@ private:
         std::vector<std::pair<uint32_t, uint32_t>> ranges(submeshCount); // (indexStart, indexCount)
         for (auto& r : ranges) { r.first = u32(); r.second = u32(); }
 
-        // Interleaved vertices. uv1/color/skin are parsed-and-skipped for now
-        // (the shader path doesn't consume them yet) — kept readable, not dropped silently.
+        // Interleaved vertices. uv1/color are parsed-and-skipped for now (the
+        // shader path doesn't consume them yet) — kept readable, not dropped silently.
+        // Skin (boneIndex/boneWeight) is read into the vertex for the skinned path.
         std::vector<Vertex> verts;
         verts.reserve(vertexCount);
         for (uint32_t i = 0; i < vertexCount; ++i) {
@@ -70,11 +77,18 @@ private:
             Vec2f uv0(f32(), f32());
             if (hasUV1)   { f32(); f32(); }
             if (hasColor) { f32(); f32(); f32(); f32(); }
-            if (hasSkin)  { u16(); u16(); u16(); u16(); f32(); f32(); f32(); f32(); }
             Vertex v(pos, uv0, nrm);
             v.tangent = tan;
+            if (hasSkin) {
+                v.boneIndex[0] = u16(); v.boneIndex[1] = u16();
+                v.boneIndex[2] = u16(); v.boneIndex[3] = u16();
+                v.boneWeight[0] = f32(); v.boneWeight[1] = f32();
+                v.boneWeight[2] = f32(); v.boneWeight[3] = f32();
+            }
             verts.push_back(v);
         }
+        this->skinned   = hasSkin;
+        this->boneCount = (int)boneCount;
 
         std::vector<uint32_t> indices(indexCount);
         for (auto& idx : indices) idx = u32();
@@ -92,6 +106,13 @@ private:
             sm.count = (int)triangles.size() - sm.start;
             submeshes.push_back(sm);
         }
+
+        // Bindposes follow (boneCount × 16 floats). The runtime bakes bindpose
+        // into the .anim skinning matrices, so they are skipped here; reading
+        // keeps the stream position correct if more sections are added later.
+        if (hasSkin)
+            for (uint32_t b = 0; b < boneCount; ++b)
+                for (int k = 0; k < 16; ++k) f32();
     }
 
     struct FaceIndex

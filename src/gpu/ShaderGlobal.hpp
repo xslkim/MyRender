@@ -128,6 +128,13 @@ namespace gpu
     // a switch for the tutorial visuals.
     bool g_bilinear = true;
 
+    // Skinning — per-frame skinning matrices S[b] = bone.localToWorld·bindpose
+    // (baked at export). A skinned vertex computes posWS = Σ w_b·(S[b]·posOS).
+    static const int kMaxBones = 128;
+    float4x4 _BoneMatrices[kMaxBones];
+    int      _BoneCount = 0;
+    bool     _SKINNED   = false;
+
     // Shadow map
     static const int kShadowRes = 2048;
     float4x4 _LightVP;                // light view-projection for shadow coord transform

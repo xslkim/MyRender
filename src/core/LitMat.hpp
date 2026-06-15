@@ -64,6 +64,10 @@ public:
         attributes->texcoord   = vertex.texcoord;
         attributes->normalOS   = vertex.normal;
         attributes->tangentOS  = vertex.tangent;
+        for (int i = 0; i < 4; ++i) {
+            attributes->boneIndex[i]  = vertex.boneIndex[i];
+            attributes->boneWeight[i] = vertex.boneWeight[i];
+        }
     }
 
     void UpdateGpuParameter() const override
