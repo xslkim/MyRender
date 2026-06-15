@@ -2,6 +2,7 @@
 #include <Scene.hpp>
 #include <Config.hpp>
 #include <Input.hpp>
+#include <SyntheticSkinScene.hpp>
 #include <cstdio>
 #include <cstdint>
 #include <string>
@@ -188,6 +189,17 @@ int main(int argc, char* argv[])
     if (argc > 1 && std::string(argv[1]) == "--capture") {
         std::string outDir = (argc > 2) ? argv[2] : "tech_doc/shots";
         runCapture(outDir);
+        SDL_Quit();
+        return 0;
+    }
+
+    // Dev tool: synthesize a skinned validation scene (no Unity needed), then
+    // capture it. MyRender.exe --gen-synth-skin [dir] [outFile]
+    if (argc > 1 && std::string(argv[1]) == "--gen-synth-skin") {
+        std::string dir = (argc > 2) ? argv[2] : "out/_synthscene";
+        std::string out = (argc > 3) ? argv[3] : "out/synth_skin.bmp";
+        SyntheticSkinScene::Generate(dir);
+        runCaptureUnity(dir, out);
         SDL_Quit();
         return 0;
     }
