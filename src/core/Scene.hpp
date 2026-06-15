@@ -14,6 +14,7 @@
 #include "LegacyTransforms.hpp"
 #include "ShadowPass.hpp"
 #include "FlyCamera.hpp"
+#include "Frustum.hpp"
 
 // Scene owns a matrix-based SceneModel and feeds it to Render. Two front ends:
 //   - LoadUnity:  static snapshot from the Unity exporter (no animation).
@@ -114,8 +115,15 @@ public:
         Render::Get().SetLight(_model.light);
         Render::Get().SetAmbient(_model.ambientColor * _model.ambientIntensity);
 
+        // View-frustum culling: skip objects whose world AABB is outside the
+        // camera frustum. For a big scene (Garden: 4000 objects, most off-screen)
+        // this removes the bulk of the per-object vertex/clip work.
+        Frustum frustum;
+        frustum.FromViewProjection(_model.camera.projection * _model.camera.view);
+
         for (const auto& obj : _model.objects) {
             if (!obj.mesh) continue;
+            if (obj.hasAABB && !frustum.TestAABB(obj.aabbMin, obj.aabbMax)) continue;
 
             // Skinned objects upload their current frame's bone matrices and use
             // the LBS vertex path (no model matrix); others use M as usual.

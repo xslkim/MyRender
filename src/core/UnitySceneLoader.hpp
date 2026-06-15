@@ -44,6 +44,25 @@ public:
             ro.localToWorld = o.matrix;
             ro.worldToLocal = o.worldToLocal;
 
+            // World AABB for frustum culling: transform the mesh's 8 object-space
+            // corners. Skipped for skinned meshes (their box changes when animated).
+            if (ro.mesh && !o.skinned) {
+                float3 lo = ro.mesh->aabbMin, hi = ro.mesh->aabbMax;
+                float3 wmn( 1e30f,  1e30f,  1e30f);
+                float3 wmx(-1e30f, -1e30f, -1e30f);
+                for (int k = 0; k < 8; ++k) {
+                    float3 c((k & 1) ? hi.x : lo.x,
+                             (k & 2) ? hi.y : lo.y,
+                             (k & 4) ? hi.z : lo.z);
+                    float4 w = ro.localToWorld * float4(c.x, c.y, c.z, 1.0f);
+                    wmn = vector_min(wmn, float3(w.x, w.y, w.z));
+                    wmx = vector_max(wmx, float3(w.x, w.y, w.z));
+                }
+                ro.aabbMin = wmn;
+                ro.aabbMax = wmx;
+                ro.hasAABB = true;
+            }
+
             // Skinned objects: load the baked clip and switch to the LBS vertex
             // path. The .mesh skin block was already read into the vertices.
             bool meshSkinned = ro.mesh && ro.mesh->skinned;

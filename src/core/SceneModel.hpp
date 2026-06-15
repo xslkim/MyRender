@@ -39,6 +39,12 @@ struct RenderObject {
     bool                           skinned = false;
     std::shared_ptr<AnimationClip> clip;
     AnimationPlayer                player;
+
+    // World-space AABB for view-frustum culling. hasAABB is false for skinned
+    // objects (the bind-pose box is wrong once animated) so they are never culled.
+    float3 aabbMin;
+    float3 aabbMax;
+    bool   hasAABB = false;
 };
 
 struct SceneModel {

@@ -25,12 +25,29 @@ public:
     bool skinned   = false;
     int  boneCount = 0;
 
+    // Object-space bounds (computed after load) — used to derive a world AABB for
+    // view-frustum culling.
+    float3 aabbMin;
+    float3 aabbMax;
+
     Mesh(const std::string& fileName)
     {
         std::string ext = std::filesystem::path(fileName.c_str()).extension().string();
         if (ext == ".mesh")     loadBinary(fileName);
         else if (ext == ".obj") load(fileName);
         else                    assert(false && "unsupported mesh format");
+        computeBounds();
+    }
+
+    void computeBounds()
+    {
+        aabbMin = float3( 1e30f,  1e30f,  1e30f);
+        aabbMax = float3(-1e30f, -1e30f, -1e30f);
+        for (const auto& tri : triangles)
+            for (const auto& v : tri) {
+                aabbMin = vector_min(aabbMin, v.position);
+                aabbMax = vector_max(aabbMax, v.position);
+            }
     }
 
 private:
