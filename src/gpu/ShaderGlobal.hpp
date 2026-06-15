@@ -94,6 +94,11 @@ namespace gpu
 
     float4x4 UNITY_MATRIX_P;
 
+    // Flat environment ambient (indirect diffuse fill). Real Unity outdoor scenes
+    // get most of their fill from the skybox SH probe, which this port doesn't
+    // sample; we approximate it with one constant color uploaded from the scene.
+    half3 _AmbientColor = half3(0, 0, 0);
+
     //这个实际上是主光源的方向
     float4 _MainLightPosition;
 

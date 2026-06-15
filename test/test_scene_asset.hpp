@@ -16,8 +16,8 @@ inline void test_scene_asset()
     asset::SceneAsset scene = nlohmann::json::parse(sf).get<asset::SceneAsset>();
 
     CHECK(scene.name == "ValidationScene");
-    // Ground, Cube, Sphere, Capsule, Textured (the M2 textured sphere).
-    CHECK(scene.objects.size() == 5);
+    // Ground, Cube, Sphere, Capsule, Textured (M2 sphere), BarMesh (M4 skinned bar).
+    CHECK(scene.objects.size() == 6);
 
     // Ground: scale (2,1,2) -> localToWorld diag (2,1,2); worldToLocal diag (0.5,1,0.5).
     const asset::ObjectAsset& ground = scene.objects[0];

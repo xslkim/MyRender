@@ -65,8 +65,9 @@ namespace gpu
         inputData.normalWS = TransformTangentToWorld(normalTS, tangentToWorld);
         inputData.normalWS = NormalizeNormalPerPixel(inputData.normalWS);
         inputData.viewDirectionWS = viewDirWS;
-        //暂时不支持，烘焙环境光
-        //inputData.bakedGI = SAMPLE_GI(input.staticLightmapUV, input.vertexSH, inputData.normalWS);
+        // No baked lightmaps / SH probe in this port; use a flat scene ambient as
+        // the indirect-diffuse fill so daylight scenes aren't pure black (design §11).
+        inputData.bakedGI = _AmbientColor;
         inputData.normalizedScreenSpaceUV = GetNormalizedScreenSpaceUV(input.positionCS);
 
         // Shadow coordinate: project world position into light clip space per-pixel.

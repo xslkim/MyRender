@@ -22,6 +22,11 @@ CMakeFiles/
 /output/
 /capture/
 
+# Large real-scene exports (hundreds of MB of uncompressed TGA). The small
+# ValidationScene stays tracked as the reproducible test fixture.
+/assets/unity_export/GardenScene/
+/assets/unity_export/Garden/
+
 # OS
 Thumbs.db
 .DS_Store

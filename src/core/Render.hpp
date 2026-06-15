@@ -88,6 +88,11 @@ public:
         gpu::_MainLightColor        = light.color;
     }
 
+    void SetAmbient(const float3& color)
+    {
+        gpu::_AmbientColor = half3(color.x, color.y, color.z);
+    }
+
     void SetModelMatrices(const float4x4& localToWorld, const float4x4& worldToLocal)
     {
         gpu::UNITY_MATRIX_M   = localToWorld;
@@ -186,6 +191,12 @@ public:
     void Draw(const Mesh& mesh, const Mesh::SubMesh& sub, const Material& mat)
     {
         mat.UpdateGpuParameter();
+
+        // The Attributes/Varyings pool is per-Draw scratch: Pass 1 copies finished
+        // vertices into _pendingTris (by value), so nothing in the pool outlives
+        // this call. Reset here so a scene with many objects (Garden has ~4000)
+        // can't overflow the fixed pool by accumulating across draws.
+        ResetFrameBuffers();
 
         // Pass 1 (single-threaded): vertex shader + Sutherland-Hodgman clip
         _pendingTris.clear();

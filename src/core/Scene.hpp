@@ -85,6 +85,7 @@ public:
         Render::Get().SetCamera(_model.camera);
         Render::Get().BeginFrame();
         Render::Get().SetLight(_model.light);
+        Render::Get().SetAmbient(_model.ambientColor * _model.ambientIntensity);
 
         for (const auto& obj : _model.objects) {
             if (!obj.mesh) continue;
