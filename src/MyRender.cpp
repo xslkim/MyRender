@@ -169,10 +169,20 @@ static void runCaptureUnity(const std::string& sceneDir, const std::string& outF
 
     Scene scene;
     scene.ScreenBuffer = buf;
+
+    auto t0 = std::chrono::high_resolution_clock::now();
     scene.LoadUnity("scene.json");
+    auto t1 = std::chrono::high_resolution_clock::now();
     gpu::g_debugView = debugView;
     if (animTime > 0.0f) scene.AdvanceAnimations(animTime); // seek into the clip
     scene.Render();
+    auto t2 = std::chrono::high_resolution_clock::now();
+    scene.Render(); // second frame = steady-state render cost (no load)
+    auto t3 = std::chrono::high_resolution_clock::now();
+
+    auto ms = [](auto a, auto b){ return std::chrono::duration_cast<std::chrono::milliseconds>(b-a).count(); };
+    printf("[bench] load=%lldms  render1=%lldms  render2=%lldms\n", ms(t0,t1), ms(t1,t2), ms(t2,t3));
+
     writeBMP(outFile, buf, W, H);
     printf("unity capture -> %s\n", outFile.c_str());
     delete[] buf;

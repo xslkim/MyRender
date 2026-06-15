@@ -29,6 +29,9 @@ public:
     {
         _model       = UnitySceneLoader::Load(scene_json_rel);
         _legacyOrbit = false;
+        _shadowsComputed = false;
+        _sceneHasSkin    = false;
+        for (const auto& o : _model.objects) if (o.skinned) _sceneHasSkin = true;
         Render::Get().Init();
         Render::Get().SetFrontFaceSign(-1.0f); // verbatim Unity winding
     }
@@ -79,8 +82,14 @@ public:
     {
         if (_legacyOrbit) RebuildLegacyCamera();
 
-        // Shadow depth pass (Unity scenes only; uses its own depth buffer).
-        if (!_legacyOrbit) ShadowPass::Render(_model);
+        // Shadow depth pass (Unity scenes only; uses its own depth buffer). The
+        // shadow map lives in light space and is independent of the camera, so for
+        // a fully static scene it only needs computing once; skinned scenes (moving
+        // geometry) recompute every frame.
+        if (!_legacyOrbit && (_sceneHasSkin || !_shadowsComputed)) {
+            ShadowPass::Render(_model);
+            _shadowsComputed = true;
+        }
 
         Render::Get().SetCamera(_model.camera);
         Render::Get().BeginFrame();
@@ -147,7 +156,9 @@ public:
 
 private:
     SceneModel _model;
-    bool       _legacyOrbit = false;
+    bool       _legacyOrbit     = false;
+    bool       _shadowsComputed  = false; // static-scene shadow map cached after frame 1
+    bool       _sceneHasSkin      = false; // skinned objects force per-frame shadow recompute
 
     // Legacy camera/light (only used by the orbit/capture path).
     Camera _camera;
