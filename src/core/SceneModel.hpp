@@ -1,9 +1,12 @@
 #pragma once
 #include <vector>
+#include <memory>
 #include "Vector.hpp"
 #include "Matrix.hpp"
 #include "Mesh.hpp"
 #include "Material.hpp"
+#include "AnimationClip.hpp"
+#include "AnimationPlayer.hpp"
 
 // ---------------------------------------------------------------------------
 // SceneModel — the single, matrix-based runtime scene the renderer consumes.
@@ -30,6 +33,12 @@ struct RenderObject {
     std::vector<Material*> materials;   // one per submesh, in submesh order
     float4x4               localToWorld; // -> UNITY_MATRIX_M
     float4x4               worldToLocal; // -> UNITY_MATRIX_I_M
+
+    // Skinning (set when the mesh has a skin block + a baked .anim). The clip is
+    // owned here; the player advances it and uploads bone matrices before drawing.
+    bool                           skinned = false;
+    std::shared_ptr<AnimationClip> clip;
+    AnimationPlayer                player;
 };
 
 struct SceneModel {

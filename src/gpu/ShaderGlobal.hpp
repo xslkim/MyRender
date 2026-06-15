@@ -135,6 +135,24 @@ namespace gpu
     int      _BoneCount = 0;
     bool     _SKINNED   = false;
 
+    // Weighted sum of the bone skinning matrices for one vertex (linear blend
+    // skinning). Lives here so both the vertex path and the shadow caster can use
+    // it. No weights -> identity (mesh-local already equals world).
+    inline float4x4 BlendSkinMatrix(const int* idx, const float* w)
+    {
+        float4x4 S;                       // identity by default
+        bool any = false;
+        for (int i = 0; i < 4; ++i) {
+            if (w[i] == 0.0f) continue;
+            int b = idx[i];
+            if (b < 0 || b >= _BoneCount) continue;
+            float4x4 wb = _BoneMatrices[b] * w[i];
+            S = any ? (S + wb) : wb;       // start from the first weighted term
+            any = true;
+        }
+        return any ? S : float4x4();
+    }
+
     // Shadow map
     static const int kShadowRes = 2048;
     float4x4 _LightVP;                // light view-projection for shadow coord transform

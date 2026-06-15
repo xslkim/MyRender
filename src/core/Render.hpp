@@ -122,6 +122,27 @@ public:
             RasterizeShadowTri(tri[0], tri[1], tri[2]);
     }
 
+    // Skinned shadow caster: blend each vertex to world space via the uploaded
+    // gpu::_BoneMatrices (the object's current frame must already be uploaded),
+    // then project with _LightVP. No per-object model matrix for skinned meshes.
+    void DrawDepthOnlySkinned(const Mesh& mesh, const Mesh::SubMesh& sub)
+    {
+        _shadowPendingTris.clear();
+        int end = sub.start + sub.count;
+        for (int i = sub.start; i < end; ++i) {
+            const auto& tri = mesh.triangles[i];
+            std::array<Vertex, 3> wtri = tri;
+            for (int k = 0; k < 3; ++k) {
+                float4x4 S = gpu::BlendSkinMatrix(tri[k].boneIndex, tri[k].boneWeight);
+                float4 pos = S * float4(tri[k].position.x, tri[k].position.y, tri[k].position.z, 1.0f);
+                wtri[k].position = float3(pos.x, pos.y, pos.z);
+            }
+            CollectShadowTriangle(wtri, gpu::_LightVP); // positions already in world
+        }
+        for (const auto& t : _shadowPendingTris)
+            RasterizeShadowTri(t[0], t[1], t[2]);
+    }
+
     // -------------------------------------------------------------------------
     // Buffer access
     // -------------------------------------------------------------------------

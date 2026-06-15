@@ -69,6 +69,10 @@ public:
             _camera.Position.z = _orbitRadius * std::cos(_orbitAngle);
             _camera.Rotation.y = _orbitAngle * (180.0f / PI) + _orbitRotYOffset;
         }
+
+        // Advance skinned animations by wall-clock time.
+        for (auto& obj : _model.objects)
+            if (obj.skinned) obj.player.Advance(dt);
     }
 
     void Render()
@@ -84,7 +88,16 @@ public:
 
         for (const auto& obj : _model.objects) {
             if (!obj.mesh) continue;
-            Render::Get().SetModelMatrices(obj.localToWorld, obj.worldToLocal);
+
+            // Skinned objects upload their current frame's bone matrices and use
+            // the LBS vertex path (no model matrix); others use M as usual.
+            if (obj.skinned) {
+                obj.player.UploadCurrentFrame();
+            } else {
+                gpu::_SKINNED = false;
+                Render::Get().SetModelMatrices(obj.localToWorld, obj.worldToLocal);
+            }
+
             const auto& subs = obj.mesh->submeshes;
             for (size_t s = 0; s < subs.size(); ++s) {
                 Material* mat = MaterialForSubmesh(obj, s);

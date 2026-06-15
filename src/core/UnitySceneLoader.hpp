@@ -1,10 +1,13 @@
 #pragma once
 #include <fstream>
+#include <memory>
 #include "SceneAsset.hpp"
 #include "SceneModel.hpp"
 #include "MeshCache.hpp"
 #include "MaterialCache.hpp"
 #include "Config.hpp"
+#include "AnimationClip.hpp"
+#include "SkinnedLitShader.hpp"
 
 // ---------------------------------------------------------------------------
 // UnitySceneLoader — asset::SceneAsset (verbatim Unity export) -> SceneModel.
@@ -40,8 +43,22 @@ public:
                 ro.materials.push_back(MaterialCache::Get().GetMaterialFromAsset(mp));
             ro.localToWorld = o.matrix;
             ro.worldToLocal = o.worldToLocal;
+
+            // Skinned objects: load the baked clip and switch to the LBS vertex
+            // path. The .mesh skin block was already read into the vertices.
+            bool meshSkinned = ro.mesh && ro.mesh->skinned;
+            if (o.skinned && meshSkinned && !o.anim.empty()) {
+                ro.clip = std::make_shared<AnimationClip>(Config::scene_path + o.anim);
+                ro.player.SetClip(ro.clip.get());
+                ro.skinned = true;
+                for (auto* m : ro.materials)
+                    if (m) m->vertex_shader = gpu::LitSkinnedVertexShader;
+            }
             model.objects.push_back(ro);
         }
+
+        // player.clip points at the heap AnimationClip held by the shared_ptr,
+        // which is stable across the vector copies above.
         return model;
     }
 };

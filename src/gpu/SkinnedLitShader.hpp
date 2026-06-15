@@ -15,22 +15,6 @@
 // ---------------------------------------------------------------------------
 namespace gpu
 {
-    // Weighted sum of the bone skinning matrices for one vertex.
-    inline float4x4 BlendSkinMatrix(const int* idx, const float* w)
-    {
-        float4x4 S;                       // identity by default
-        bool any = false;
-        for (int i = 0; i < 4; ++i) {
-            if (w[i] == 0.0f) continue;
-            int b = idx[i];
-            if (b < 0 || b >= _BoneCount) continue;
-            float4x4 wb = _BoneMatrices[b] * w[i];
-            S = any ? (S + wb) : wb;       // start from the first weighted term
-            any = true;
-        }
-        return any ? S : float4x4();       // no weights -> identity (mesh-local == world)
-    }
-
     inline void LitSkinnedVertexShader(const Attributes* attributes, Varyings* varyings)
     {
         const Attributes& input = *attributes;

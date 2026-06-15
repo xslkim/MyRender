@@ -125,8 +125,16 @@ inline void Render(const SceneModel& model)
 
     for (const auto& obj : model.objects) {
         if (!obj.mesh) continue;
-        for (const auto& sub : obj.mesh->submeshes)
-            ::Render::Get().DrawDepthOnly(*obj.mesh, sub, obj.localToWorld);
+        if (obj.skinned) {
+            // Upload this object's current frame so the skinned caster blends
+            // with the right bone matrices.
+            obj.player.UploadCurrentFrame();
+            for (const auto& sub : obj.mesh->submeshes)
+                ::Render::Get().DrawDepthOnlySkinned(*obj.mesh, sub);
+        } else {
+            for (const auto& sub : obj.mesh->submeshes)
+                ::Render::Get().DrawDepthOnly(*obj.mesh, sub, obj.localToWorld);
+        }
     }
 }
 

@@ -98,6 +98,7 @@ struct ObjectAsset {
     float4x4                 matrix;       // localToWorld -> UNITY_MATRIX_M
     float4x4                 worldToLocal;  //            -> UNITY_MATRIX_I_M
     bool                     skinned = false;
+    std::string              anim;      // relative path to .anim (only if skinned)
 };
 
 struct SceneAsset {
@@ -175,6 +176,7 @@ inline void from_json(const json& j, ObjectAsset& o)
     o.matrix       = ReadMat4(j.at("matrix"));
     o.worldToLocal = ReadMat4(j.at("worldToLocal"));
     o.skinned      = j.value("skinned", false);
+    o.anim         = j.value("anim", "");
 }
 
 inline void from_json(const json& j, SceneAsset& s)
