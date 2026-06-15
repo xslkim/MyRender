@@ -116,6 +116,17 @@ namespace gpu
     SamplerState sampler_BumpMap;
     Texture2D* _EmissionMap = nullptr;
     SamplerState sampler_EmissionMap;
+    Texture2D* _OcclusionMap = nullptr;
+    SamplerState sampler_OcclusionMap;
+    half _OcclusionStrength = 1.0f;
+    bool _OCCLUSIONMAP = false;
+    half _BumpScale = 1.0f;
+    // URP _SMOOTHNESS_TEXTURE_ALBEDO_CHANNEL_A: smoothness from albedo.a vs mask.a.
+    bool _SMOOTHNESS_TEXTURE_ALBEDO_CHANNEL_A = false;
+
+    // Texture filtering: bilinear by default (closer to Unity); point is kept as
+    // a switch for the tutorial visuals.
+    bool g_bilinear = true;
     Color _BaseColor;
     Color _SpecColor;
     real _Cutoff;
@@ -233,8 +244,11 @@ namespace gpu
         return false;
     }
 
+    // URP's per-feature debug flags. Outside the lighting-debug view, every
+    // feature is enabled — returning false here silently dropped GI, emission,
+    // additional/vertex lights and AO from the final color. Normal render = all on.
     bool IsLightingFeatureEnabled(std::string feature)
     {
-        return false;
+        return true;
     }
 }

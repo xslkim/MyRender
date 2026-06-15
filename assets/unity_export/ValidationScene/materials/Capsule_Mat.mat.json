@@ -1,0 +1,23 @@
+{
+  "name": "Capsule_Mat",
+  "shaderModel": "Lit",
+  "sourceShader": "Universal Render Pipeline/Lit",
+  "surfaceType": "opaque",
+  "cull": "back",
+  "alphaClip": false,
+  "cutoff": 0.5,
+  "baseColor": [0.299999982, 0.8, 0.299999982, 1],
+  "baseMap": "",
+  "tiling": [1, 1],
+  "offset": [0, 0],
+  "normalMap": "",
+  "normalScale": 1,
+  "metallic": 0,
+  "smoothness": 0.9,
+  "metallicGlossMap": "",
+  "smoothnessChannel": "metallicAlpha",
+  "occlusionMap": "",
+  "occlusionStrength": 1,
+  "emissionColor": [0, 0, 0],
+  "emissionMap": ""
+}

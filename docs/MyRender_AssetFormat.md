@@ -8,7 +8,13 @@ and the MyRender runtime. Both sides build against this document.
 - **Coordinate system**: Unity world space, left-handed, **+X right, +Y up, +Z forward**, units = **meters**.
   Values are exported **verbatim** — no axis flip, no winding reversal. The renderer adopts this system.
 - **Endianness**: little-endian.
-- **Matrices**: stored **row-major**, 16 `f32` (`m00 m01 m02 m03 m10 ...`). A transform matrix is `localToWorld`.
+- **Matrices**: stored **row-major**, 16 `f32` (`m00 m01 m02 m03 m10 ...`), column-vector convention (`M·v`).
+  Camera `worldToCameraMatrix` / `projectionMatrix` and object `matrix` / `worldToLocal` are exported
+  **verbatim from Unity** and fed straight into `UNITY_MATRIX_V/P/M/I_M`. Do **not** reconstruct the view
+  matrix by inverting the camera's `localToWorld` — Unity's `worldToCameraMatrix` bakes in the −Z view flip
+  (OpenGL convention) that a plain inverse would miss. Likewise `projectionMatrix` is Unity's platform-agnostic
+  OpenGL form (NDC z∈[−1,1]), which is exactly what the rasterizer expects — never pass it through
+  `GL.GetGPUProjectionMatrix`.
 - **Quaternions**: `[x, y, z, w]`.
 - **Colors**: linear-ish as authored in Unity (`[r, g, b, a]`, floats). Textures carry their own color space (see below).
 - **Front face**: clockwise in screen space (Unity default). Renderer culls per material `cull`.
@@ -35,10 +41,11 @@ Meshes/materials/textures are de-duplicated by source asset so multiple objects 
   "name": "ValidationScene",
   "coordinateSystem": "unity-lh-yup-zforward-meters",
   "camera": {
-    "position": [x, y, z],
-    "rotation": [qx, qy, qz, qw],
-    "matrix":   [16 floats],          // worldToCamera convenience (== view matrix)
-    "fovVertical": 60.0,              // degrees
+    "position": [x, y, z],            // reference/debug only
+    "rotation": [qx, qy, qz, qw],     // reference/debug only
+    "worldToCameraMatrix": [16 floats], // Unity camera.worldToCameraMatrix -> UNITY_MATRIX_V verbatim
+    "projectionMatrix":    [16 floats], // Unity camera.projectionMatrix    -> UNITY_MATRIX_P verbatim
+    "fovVertical": 60.0,              // degrees (reference; projectionMatrix is authoritative)
     "near": 0.3, "far": 1000.0,
     "aspect": 1.7777778,
     "orthographic": false,
@@ -57,10 +64,11 @@ Meshes/materials/textures are de-duplicated by source asset so multiple objects 
       "name": "Cube",
       "mesh": "meshes/abc123.mesh",
       "materials": ["materials/Foo.mat.json"],  // one per submesh, in submesh order
-      "position": [x, y, z],
-      "rotation": [qx, qy, qz, qw],
-      "scale":    [x, y, z],
-      "matrix":   [16 floats],        // localToWorld; renderer uses this directly
+      "position": [x, y, z],          // reference/debug only (matrix is authoritative)
+      "rotation": [qx, qy, qz, qw],   // reference/debug only
+      "scale":    [x, y, z],          // reference/debug only
+      "matrix":       [16 floats],    // localToWorld -> UNITY_MATRIX_M verbatim
+      "worldToLocal": [16 floats],    // worldToLocal -> UNITY_MATRIX_I_M (normals via upper-3x3 transpose)
       "skinned": false                // true => mesh has skin block, uses anim (v2)
     }
   ]

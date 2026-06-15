@@ -1,0 +1,81 @@
+{
+  "name": "ValidationScene",
+  "coordinateSystem": "unity-lh-yup-zforward-meters",
+  "camera": {
+  "position": [0, 3, -7],
+  "rotation": [0.170672342, 0, 0, 0.98532784],
+  "worldToCameraMatrix": [1, 0, 0, 0, 0, 0.9417419, 0.336336434, -0.4708705, 0, 0.336336434, -0.9417419, -7.60120249, 0, 0, 0, 1],
+  "projectionMatrix": [0.974278569, 0, 0, 0, 0, 1.73205078, 0, 0, 0, 0, -1.0006001, -0.60018003, 0, 0, -1, 0],
+  "fovVertical": 60,
+  "near": 0.3,
+  "far": 1000,
+  "aspect": 1.77777779,
+  "orthographic": false,
+  "orthoSize": 5,
+  "backgroundColor": [0.0134117464, 0.0173891, 0.0272117853, 1]
+},
+  "mainLight": {
+  "direction": [-0.321393818, -0.766044557, 0.5566703],
+  "rotation": [0.408217937, -0.234569728, 0.109381661, 0.8754261],
+  "color": [1, 1, 1],
+  "intensity": 1
+},
+  "ambient": { "color": [0.0369675867, 0.04214946, 0.05455384], "intensity": 1.0 },
+  "objects": [
+    {
+      "name": "Ground",
+      "mesh": "meshes/Plane_128.mesh",
+      "materials": ["materials/Ground_Mat.mat.json"],
+      "position": [0, 0, 0],
+      "rotation": [0, 0, 0, 1],
+      "scale": [2, 1, 2],
+      "matrix": [2, 0, 0, 0, 0, 1, 0, 0, 0, 0, 2, 0, 0, 0, 0, 1],
+      "worldToLocal": [0.5, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0.5, 0, 0, 0, 0, 1],
+      "skinned": false
+    },
+    {
+      "name": "Cube",
+      "mesh": "meshes/Cube_120.mesh",
+      "materials": ["materials/Cube_Mat.mat.json"],
+      "position": [-2.5, 0.5, 0],
+      "rotation": [0, 0, 0, 1],
+      "scale": [1, 1, 1],
+      "matrix": [1, 0, 0, -2.5, 0, 1, 0, 0.5, 0, 0, 1, 0, 0, 0, 0, 1],
+      "worldToLocal": [1, 0, 0, 2.5, 0, 1, 0, -0.5, 0, 0, 1, 0, 0, 0, 0, 1],
+      "skinned": false
+    },
+    {
+      "name": "Sphere",
+      "mesh": "meshes/Sphere_124.mesh",
+      "materials": ["materials/Sphere_Mat.mat.json"],
+      "position": [0, 0.5, 0],
+      "rotation": [0, 0, 0, 1],
+      "scale": [1, 1, 1],
+      "matrix": [1, 0, 0, 0, 0, 1, 0, 0.5, 0, 0, 1, 0, 0, 0, 0, 1],
+      "worldToLocal": [1, 0, 0, 0, 0, 1, 0, -0.5, 0, 0, 1, 0, 0, 0, 0, 1],
+      "skinned": false
+    },
+    {
+      "name": "Capsule",
+      "mesh": "meshes/Capsule_126.mesh",
+      "materials": ["materials/Capsule_Mat.mat.json"],
+      "position": [2.5, 1, 0],
+      "rotation": [0, 0, 0, 1],
+      "scale": [1, 1, 1],
+      "matrix": [1, 0, 0, 2.5, 0, 1, 0, 1, 0, 0, 1, 0, 0, 0, 0, 1],
+      "worldToLocal": [1, 0, 0, -2.5, 0, 1, 0, -1, 0, 0, 1, 0, 0, 0, 0, 1],
+      "skinned": false
+    },
+    {
+      "name": "Textured",
+      "mesh": "meshes/Sphere_124.mesh",
+      "materials": ["materials/Textured_Mat.mat.json"],
+      "position": [0, 2.4, 0],
+      "rotation": [0, 0, 0, 1],
+      "scale": [1.5, 1.5, 1.5],
+      "matrix": [1.5, 0, 0, 0, 0, 1.5, 0, 2.4, 0, 0, 1.5, 0, 0, 0, 0, 1],
+      "worldToLocal": [0.6666667, 0, 0, 0, 0, 0.6666667, 0, -1.60000014, 0, 0, 0.6666667, 0, 0, 0, 0, 1],
+      "skinned": false
+    }
+  ]
+}

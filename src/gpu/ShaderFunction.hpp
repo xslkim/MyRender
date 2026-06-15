@@ -281,7 +281,8 @@ namespace gpu
         {
             return half(1);
         }
-        return tex->SamplerPoint(uv.x, uv.y);
+        return g_bilinear ? tex->SamplerLinear(uv.x, uv.y)
+                          : tex->SamplerPoint(uv.x, uv.y);
     }
 
 
@@ -330,7 +331,7 @@ namespace gpu
         if (_NORMALMAP && bumpMap != nullptr)
         {
             half4 n = SAMPLE_TEXTURE2D(bumpMap, sampler_bumpMap, uv);
-            return UnpackNormal(n);
+            return UnpackNormal(n, scale);
         }
         return half3(0.0, 0.0, 1.0);
     }

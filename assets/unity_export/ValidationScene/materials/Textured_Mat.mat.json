@@ -1,0 +1,23 @@
+{
+  "name": "Textured_Mat",
+  "shaderModel": "Lit",
+  "sourceShader": "Universal Render Pipeline/Lit",
+  "surfaceType": "opaque",
+  "cull": "back",
+  "alphaClip": false,
+  "cutoff": 0.5,
+  "baseColor": [1, 1, 1, 1],
+  "baseMap": "textures/Textured_Albedo.tga",
+  "tiling": [1, 1],
+  "offset": [0, 0],
+  "normalMap": "textures/Textured_Normal.tga",
+  "normalScale": 1,
+  "metallic": 1,
+  "smoothness": 1,
+  "metallicGlossMap": "textures/Textured_Mask.tga",
+  "smoothnessChannel": "metallicAlpha",
+  "occlusionMap": "textures/Textured_AO.tga",
+  "occlusionStrength": 1,
+  "emissionColor": [1, 1, 1],
+  "emissionMap": "textures/Textured_Emission.tga"
+}

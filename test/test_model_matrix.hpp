@@ -1,7 +1,8 @@
 ﻿#pragma once
-#include "Render.hpp"
-#include "Camera.hpp"
+#include "LegacyTransforms.hpp"
 #include "test_utils.hpp"
+#include <fstream>
+#include "MetaData.hpp"
 
 void test_model_matrix()
 {
@@ -43,14 +44,11 @@ void test_model_matrix()
 			float m33 = item["m33"].template get<float>();
 
 
-			GameObject obj;
-			obj.Position = Vec3f(pos_x, pos_y, pos_z);
-			obj.Rotation = Vec3f(rot_x, rot_y, rot_z);
-			obj.Scale = Vec3f(scale_x, scale_y, scale_z);
-
-
-			Render::Get().UpdateModelMatrix(obj);
-			MatrixEqual(gpu::UNITY_MATRIX_M,
+			float4x4 M, IM;
+			LegacyTransforms::BuildModel(Vec3f(pos_x, pos_y, pos_z),
+			                             Vec3f(rot_x, rot_y, rot_z),
+			                             Vec3f(scale_x, scale_y, scale_z), M, IM);
+			MatrixEqual(M,
 				m00, m01, m02, m03,
 				m10, m11, m12, m13,
 				m20, m21, m22, m23,

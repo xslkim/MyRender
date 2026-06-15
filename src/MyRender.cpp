@@ -53,9 +53,11 @@ static void runCapture(const std::string& outDir)
     const int H = Config::kScreenHeight;
     unsigned char* buf = new unsigned char[W * H * 4];
 
+    gpu::g_bilinear = false; // tutorial visuals were authored with point sampling
+
     Scene scene;
     scene.ScreenBuffer = buf;
-    scene.Load(Config::scene_path + "car_scene_2.json");
+    scene.LoadLegacy(Config::scene_path + "car_scene_2.json");
 
     auto shot = [&](const std::string& name, int dv) {
         gpu::g_debugView = dv;
@@ -152,6 +154,27 @@ static void runCapture(const std::string& outDir)
     printf("capture done -> %s\n", outDir.c_str());
 }
 
+// Headless one-shot of a Unity-exported scene -> single BMP. No window.
+static void runCaptureUnity(const std::string& sceneDir, const std::string& outFile, int debugView = gpu::DV_NONE)
+{
+    const int W = Config::kScreenWidth;
+    const int H = Config::kScreenHeight;
+    unsigned char* buf = new unsigned char[W * H * 4];
+
+    Config::scene_path = sceneDir;
+    if (Config::scene_path.back() != '/' && Config::scene_path.back() != '\\')
+        Config::scene_path += '/';
+
+    Scene scene;
+    scene.ScreenBuffer = buf;
+    scene.LoadUnity("scene.json");
+    gpu::g_debugView = debugView;
+    scene.Render();
+    writeBMP(outFile, buf, W, H);
+    printf("unity capture -> %s\n", outFile.c_str());
+    delete[] buf;
+}
+
 int main(int argc, char* argv[])
 {
     if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER) != 0) {
@@ -169,6 +192,27 @@ int main(int argc, char* argv[])
         return 0;
     }
 
+    // Headless Unity one-shot: MyRender.exe --capture-unity [sceneDir] [outFile]
+    if (argc > 1 && std::string(argv[1]) == "--capture-unity") {
+        std::string dir = (argc > 2) ? argv[2] : "assets/unity_export/ValidationScene";
+        std::string out = (argc > 3) ? argv[3] : "out_validation.bmp";
+        int dv = (argc > 4) ? atoi(argv[4]) : gpu::DV_NONE; // 1=albedo 2=normalGeom 3=normalMapped 4=uv
+        runCaptureUnity(dir, out, dv);
+        SDL_Quit();
+        return 0;
+    }
+
+    // Unity scene mode: MyRender.exe --unity [sceneDir]
+    //   sceneDir defaults to the exported ValidationScene; must contain scene.json.
+    bool        useUnity = false;
+    std::string unityDir = "assets/unity_export/ValidationScene/";
+    if (argc > 1 && std::string(argv[1]) == "--unity") {
+        useUnity = true;
+        if (argc > 2) unityDir = argv[2];
+        if (unityDir.back() != '/' && unityDir.back() != '\\') unityDir += '/';
+        Config::scene_path = unityDir;
+    }
+
     const int W = Config::kScreenWidth;
     const int H = Config::kScreenHeight;
 
@@ -182,7 +226,8 @@ int main(int argc, char* argv[])
 
     Scene scene;
     scene.ScreenBuffer = frameBuffer;
-    scene.Load(Config::scene_path + "car_scene_2.json");
+    if (useUnity) scene.LoadUnity("scene.json");
+    else          scene.LoadLegacy(Config::scene_path + "car_scene_2.json");
 
     while (true) {
         SDL_Event e;

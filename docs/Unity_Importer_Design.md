@@ -144,8 +144,8 @@ Authoritative spec: [MyRender_AssetFormat.md](MyRender_AssetFormat.md). Summary:
 - **.mat.json** — URP Lit property mapping (see §10).
 - **textures** — TGA; color = sRGB, data (normal/mask/occlusion) = linear.
 
-> Exporter change needed (M1): add `worldToCameraMatrix`/`projectionMatrix` to the camera block and
-> `worldToLocal` to each object, per §5. The current exporter emits `localToWorld` + fov only.
+> Exporter now emits `worldToCameraMatrix`/`projectionMatrix` (camera) and `worldToLocal` (per object),
+> all verbatim per §5. Done in the format/exporter; the renderer-side consumption is the M1 task.
 
 ---
 
@@ -293,8 +293,10 @@ M1–M3 are the "static scene looks right" core; M4 adds motion; M5 is the real-
 ## 13. Open questions / risks
 
 1. **Front-face winding sign** (§5) — resolve empirically at M1.
-2. **Normal/mask texture read** for real scenes — needs the source-asset reimport path (§7); validation
-   scene sidesteps it.
+2. **Normal/mask texture read** — RESOLVED for the export path: `TextureExporter` now un-swizzles Unity
+   normal maps (X is stored in alpha, Y in green) back to plain RGB before writing the TGA, so MyRender
+   reads them directly. (Discovered at M2: a swizzled normal map read as RGB gives R=255 constant →
+   sideways normals → black shading.) Real BC5/DXT5nm source scenes still want the reimport path (§7).
 3. **Animated camera** in Garden/Cockpit is Timeline-driven — v1 exports a static snapshot; sampling a
    Timeline-driven camera per frame is a later add (same `AnimationMode`-style bake, different source).
 4. **CPU performance** — Garden/Oasis have large vertex counts; the single-thread vertex/clip pass may

@@ -1,7 +1,8 @@
 ﻿#pragma once
-#include "Render.hpp"
-#include "Camera.hpp"
+#include "LegacyTransforms.hpp"
 #include "test_utils.hpp"
+#include <fstream>
+#include "MetaData.hpp"
 
 void test_project_matrix_640_480()
 {
@@ -35,13 +36,7 @@ void test_project_matrix_640_480()
 			float m32 = item["m32"].template get<float>();
 			float m33 = item["m33"].template get<float>();
 
-			Camera cam = Camera(Vec3f(0, 0, 0), Vec3f(0, 0, 0));
-			cam.Far = far;
-			cam.Fov = fov;
-			cam.Near = near;
-			cam.Aspect = aspect;
-			Render::Get().UpdateProjectMatrix(cam);
-			MatrixEqual(gpu::UNITY_MATRIX_P,
+			MatrixEqual(LegacyTransforms::BuildProjection(fov, aspect, near, far),
 				m00, m01, m02, m03,
 				m10, m11, m12, m13,
 				m20, m21, m22, m23,
@@ -82,13 +77,7 @@ void test_project_matrix_1920_1080()
 			float m32 = item["m32"].template get<float>();
 			float m33 = item["m33"].template get<float>();
 
-			Camera cam = Camera(Vec3f(0, 0, 0), Vec3f(0, 0, 0));
-			cam.Far = far;
-			cam.Fov = fov;
-			cam.Near = near;
-			cam.Aspect = aspect;
-			Render::Get().UpdateProjectMatrix(cam);
-			MatrixEqual(gpu::UNITY_MATRIX_P,
+			MatrixEqual(LegacyTransforms::BuildProjection(fov, aspect, near, far),
 				m00, m01, m02, m03,
 				m10, m11, m12, m13,
 				m20, m21, m22, m23,

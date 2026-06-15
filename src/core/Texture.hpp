@@ -34,10 +34,33 @@ public:
         return buffer[r * width + c];
     }
 
+    // Bilinear filtering with Repeat wrap. Samples the four texels around the
+    // continuous coordinate and blends by the fractional position.
     float4 SamplerLinear(float x, float y) const
     {
-        // TODO: implement bilinear filtering
-        return SamplerPoint(x, y);
+        float u = x - (float)floor(x);
+        float v = y - (float)floor(y);
+
+        // Texel-center sample space: subtract 0.5 so integer coords land on centers.
+        float fx = u * width  - 0.5f;
+        float fy = v * height - 0.5f;
+        int   x0 = (int)floor(fx);
+        int   y0 = (int)floor(fy);
+        float tx = fx - x0;
+        float ty = fy - y0;
+
+        auto wrap = [](int i, int n) { i %= n; return i < 0 ? i + n : i; };
+        int x0w = wrap(x0,     width),  x1w = wrap(x0 + 1, width);
+        int y0w = wrap(y0,     height), y1w = wrap(y0 + 1, height);
+
+        const Vec4f& c00 = buffer[y0w * width + x0w];
+        const Vec4f& c10 = buffer[y0w * width + x1w];
+        const Vec4f& c01 = buffer[y1w * width + x0w];
+        const Vec4f& c11 = buffer[y1w * width + x1w];
+
+        Vec4f top = c00 * (1 - tx) + c10 * tx;
+        Vec4f bot = c01 * (1 - tx) + c11 * tx;
+        return top * (1 - ty) + bot * ty;
     }
 
 private:

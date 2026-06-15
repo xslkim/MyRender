@@ -14,7 +14,7 @@
 #include "Material.hpp"
 #include "RenderUtils.hpp"
 #include "ShaderGlobal.hpp"
-#include "Gameobject.hpp"
+#include "SceneModel.hpp"
 
 class Render {
 public:
@@ -55,136 +55,47 @@ public:
     unsigned GetHardwareThreads() const { return std::max(1u, std::thread::hardware_concurrency()); }
 
     // -------------------------------------------------------------------------
-    // Per-frame setup
+    // Per-frame setup — the renderer consumes matrices only (SceneModel).
+    // Front-end loaders own all TRS/euler/handedness concerns.
     // -------------------------------------------------------------------------
 
-    void FrameStart(const Camera& cam, const Light& light)
+    void BeginFrame()
     {
         ResetFrameBuffers();
         ClearColorBuffer();
         ClearDepthBuffer();
+    }
 
-        gpu::_ProjectionParams.x = 1;
-        gpu::_ProjectionParams.y = cam.Near;
-        gpu::_ProjectionParams.z = cam.Far;
-        gpu::_ProjectionParams.w = 1.0f / cam.Far;
+    void SetCamera(const CameraState& cam)
+    {
+        gpu::UNITY_MATRIX_V  = cam.view;
+        gpu::UNITY_MATRIX_P  = cam.projection;
+        gpu::UNITY_MATRIX_VP = cam.projection * cam.view;
 
-        gpu::_WorldSpaceCameraPos  = cam.Position;
+        gpu::_WorldSpaceCameraPos  = cam.position;
+        gpu::_ProjectionParams.x   = 1;
+        gpu::_ProjectionParams.y   = cam.near;
+        gpu::_ProjectionParams.z   = cam.far;
+        gpu::_ProjectionParams.w   = 1.0f / cam.far;
         gpu::_ScaledScreenParams.x = Config::kScreenWidth;
         gpu::_ScaledScreenParams.y = Config::kScreenHeight;
-
-        float3 lightDir = RenderUtils::RotationToDirection(
-            light.Rotation.x, light.Rotation.y, light.Rotation.z, Vec3f(0, 0, 1));
-        gpu::_MainLightPosition.xyz = lightDir;
-        gpu::_MainLightColor        = light.Color;
     }
 
-    // -------------------------------------------------------------------------
-    // Matrix uploads
-    // -------------------------------------------------------------------------
-
-    void UpdateModelMatrix(const GameObject& obj)
+    void SetLight(const LightState& light)
     {
-        float4x4 T = createMatrix4x4<float>(
-            1, 0, 0, obj.Position.x,
-            0, 1, 0, obj.Position.y,
-            0, 0, 1, obj.Position.z,
-            0, 0, 0, 1);
-
-        float4x4 S = createMatrix4x4<float>(
-            obj.Scale.x, 0, 0, 0,
-            0, obj.Scale.y, 0, 0,
-            0, 0, obj.Scale.z, 0,
-            0, 0, 0, 1);
-
-        float rx = obj.Rotation.x * PI / 180.f;
-        float4x4 Rx = createMatrix4x4<float>(
-            1, 0,        0,         0,
-            0, cos(rx), -sin(rx),   0,
-            0, sin(rx),  cos(rx),   0,
-            0, 0,        0,         1);
-
-        float ry = obj.Rotation.y * PI / 180.f;
-        float4x4 Ry = createMatrix4x4<float>(
-            cos(ry),  0, sin(ry), 0,
-            0,        1, 0,       0,
-           -sin(ry),  0, cos(ry), 0,
-            0,        0, 0,       1);
-
-        float rz = obj.Rotation.z * PI / 180.f;
-        float4x4 Rz = createMatrix4x4<float>(
-            cos(rz), -sin(rz), 0, 0,
-            sin(rz),  cos(rz), 0, 0,
-            0,        0,       1, 0,
-            0,        0,       0, 1);
-
-        float4x4 R  = Ry * Rx * Rz;
-        float4x4 RS = R * S;
-
-        gpu::UNITY_MATRIX_M   = T * R * S;
-        gpu::UNITY_MATRIX_I_M = createMatrix4x4<float>(
-            1, 0, 0, -obj.Position.x,
-            0, 1, 0, -obj.Position.y,
-            0, 0, 1, -obj.Position.z,
-            0, 0, 0, 1) * RS.Transpose();
+        // URP convention: _MainLightPosition.xyz points *toward* the light.
+        gpu::_MainLightPosition.xyz = -light.direction;
+        gpu::_MainLightColor        = light.color;
     }
 
-    void UpdateViewMatrix(const Camera& camera)
+    void SetModelMatrices(const float4x4& localToWorld, const float4x4& worldToLocal)
     {
-        float4x4 initV = createMatrix4x4<float>(
-            1, 0,  0, 0,
-            0, 1,  0, 0,
-            0, 0, -1, 0,
-            0, 0,  0, 1);
-
-        float rx = camera.Rotation.x * PI / 180.f;
-        float4x4 Rx = createMatrix4x4<float>(
-            1, 0,        0,       0,
-            0, cos(rx), -sin(rx), 0,
-            0, sin(rx),  cos(rx), 0,
-            0, 0,        0,       1);
-
-        float ry = camera.Rotation.y * PI / 180.f;
-        float4x4 Ry = createMatrix4x4<float>(
-            cos(ry), 0, sin(ry), 0,
-            0,       1, 0,       0,
-           -sin(ry), 0, cos(ry), 0,
-            0,       0, 0,       1);
-
-        float rz = camera.Rotation.z * PI / 180.f;
-        float4x4 Rz = createMatrix4x4<float>(
-            cos(rz),  sin(rz), 0, 0,
-           -sin(rz),  cos(rz), 0, 0,
-            0,        0,       1, 0,
-            0,        0,       0, 1);
-
-        float4x4 T = createMatrix4x4<float>(
-            1, 0, 0, -camera.Position.x,
-            0, 1, 0, -camera.Position.y,
-            0, 0, 1, -camera.Position.z,
-            0, 0, 0, 1);
-
-        gpu::UNITY_MATRIX_V = Rz * Rx * Ry * initV * T;
+        gpu::UNITY_MATRIX_M   = localToWorld;
+        gpu::UNITY_MATRIX_I_M = worldToLocal;
     }
 
-    void UpdateProjectMatrix(const Camera& camera)
-    {
-        float rad        = camera.Fov * PI / 180.f;
-        float tanHalfFov = tan(rad / 2);
-        float fovY       = 1.0f / tanHalfFov;
-        float fovX       = fovY / camera.Aspect;
-        float f          = camera.Far;
-        float n          = camera.Near;
-
-        float4x4 p = createMatrix4x4<float>(
-            fovX, 0,    0,                    0,
-            0,    fovY, 0,                    0,
-            0,    0,   -(f + n) / (f - n),   -(2 * f * n) / (f - n),
-            0,    0,   -1,                    0);
-
-        gpu::UNITY_MATRIX_P  = p;
-        gpu::UNITY_MATRIX_VP = p * gpu::UNITY_MATRIX_V;
-    }
+    // +1 = legacy OBJ winding (x-mirrored, reversed). -1 = verbatim Unity winding.
+    void SetFrontFaceSign(float sign) { _frontFaceSign = sign; }
 
     // -------------------------------------------------------------------------
     // Buffer access
@@ -224,14 +135,19 @@ public:
     //   So we can safely rasterize on multiple threads once vertex shading is done.
     // -------------------------------------------------------------------------
 
-    void Draw(const Mesh& mesh, const Material& mat)
+    // Draw one submesh with one material. Callers iterate an object's submeshes;
+    // model matrices are uploaded once per object via SetModelMatrices.
+    void Draw(const Mesh& mesh, const Mesh::SubMesh& sub, const Material& mat)
     {
         mat.UpdateGpuParameter();
 
         // Pass 1 (single-threaded): vertex shader + Sutherland-Hodgman clip
         _pendingTris.clear();
-        for (const auto& tri : mesh.triangles)
+        int end = sub.start + sub.count;
+        for (int i = sub.start; i < end; ++i) {
+            const auto& tri = mesh.triangles[i];
             CollectTriangle(tri[0], tri[1], tri[2], mat);
+        }
 
         if (_pendingTris.empty()) return;
 
@@ -314,6 +230,9 @@ private:
     // -------------------------------------------------------------------------
     unsigned _numThreads = 1;
 
+    // Winding convention for front-face test (see IsFrontFace / SetFrontFaceSign).
+    float _frontFaceSign = 1.0f;
+
     // Screen-space triangles collected during the single-threaded vertex pass.
     // Stored as value types so threads can safely read them in parallel.
     using ScreenTri = std::array<Varyings, 3>;
@@ -323,9 +242,12 @@ private:
     // Geometry helpers
     // -------------------------------------------------------------------------
 
+    // Front-face test in screen space. The sign depends on the data's winding
+    // convention: the legacy OBJ path (x-mirror + winding reversal) wants one
+    // sign, verbatim Unity data the other. Scene picks via SetFrontFaceSign.
     bool IsFrontFace(float3 v0, float3 v1, float3 v2)
     {
-        return vector_cross(v1 - v0, v2 - v0).z < 0;
+        return vector_cross(v1 - v0, v2 - v0).z * _frontFaceSign < 0;
     }
 
     void InterpolateVaryings(const Varyings& v0, const Varyings& v1, const Varyings& v2,
@@ -421,7 +343,14 @@ private:
         float4 s1 = RenderUtils::ClipPositionToScreenPosition(v1.positionCS, ndc1);
         float4 s2 = RenderUtils::ClipPositionToScreenPosition(v2.positionCS, ndc2);
 
-        if (!IsFrontFace(ndc0, ndc1, ndc2)) return;
+        // Cull per material. Front-face winding sign for verbatim Unity data is
+        // resolved empirically at M1 (T1.5); IsFrontFace defines "front".
+        bool front = IsFrontFace(ndc0, ndc1, ndc2);
+        switch (mat.cull) {
+            case Material::Cull::Back:  if (!front) return; break;
+            case Material::Cull::Front: if ( front) return; break;
+            case Material::Cull::Off:                        break;
+        }
 
         // Bounding box, clamped to screen and this thread's Y strip
         int minX = std::max(0,                       (int)std::min(s0.x, std::min(s1.x, s2.x)));

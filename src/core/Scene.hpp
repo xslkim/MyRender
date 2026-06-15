@@ -1,61 +1,58 @@
 #pragma once
 #include <vector>
 #include <string>
-#include <fstream>
 #include <chrono>
 #include <iostream>
 #include <cmath>
+#include <algorithm>
 #include "Render.hpp"
 #include "Camera.hpp"
 #include "Light.hpp"
-#include "Gameobject.hpp"
-#include "MetaData.hpp"
+#include "SceneModel.hpp"
+#include "UnitySceneLoader.hpp"
+#include "LegacySceneLoader.hpp"
+#include "LegacyTransforms.hpp"
 
+// Scene owns a matrix-based SceneModel and feeds it to Render. Two front ends:
+//   - LoadUnity:  static snapshot from the Unity exporter (no animation).
+//   - LoadLegacy: the tutorial car scene, with the orbit camera kept alive via
+//                 a legacy Camera that re-derives the model's view each frame.
 class Scene
 {
 public:
     unsigned char* ScreenBuffer = nullptr;
 
-    void Load(const std::string& file_name)
+    // ----- loading -----
+
+    void LoadUnity(const std::string& scene_json_rel = "scene.json")
     {
-        std::ifstream f(file_name);
-        if (!f.is_open()) return;
-        nlohmann::json j = nlohmann::json::parse(f);
-        SceneData data   = j.template get<SceneData>();
-        _camera.Load(data.cameraData);
-        _light.Load(data.lightData);
-        for (const auto& goData : data.game_objects) {
-            GameObject go;
-            go.Load(goData);
-            _gameObjects.push_back(go);
-        }
+        _model       = UnitySceneLoader::Load(scene_json_rel);
+        _legacyOrbit = false;
+        Render::Get().Init();
+        Render::Get().SetFrontFaceSign(-1.0f); // verbatim Unity winding
+    }
 
-        // Derive orbit parameters from the initial camera pose in the JSON.
-        //
-        // Convention used by UpdateViewMatrix:
-        //   world forward = (sin(ry), ..., cos(rx)*cos(ry))
-        // For a camera at XZ angle alpha looking at the origin:
-        //   sin(ry) = -sin(alpha)  =>  ry = alpha + 180 degrees
-        // So: rotYOffset = rotation.y - alpha * (180/PI)
-        //
-        _orbitRadius    = std::sqrt(_camera.Position.x * _camera.Position.x +
-                                    _camera.Position.z * _camera.Position.z);
-        _orbitHeight    = _camera.Position.y;
-        _orbitAngle     = std::atan2(_camera.Position.x, _camera.Position.z); // radians
-        _orbitRotYOffset = _camera.Rotation.y - _orbitAngle * (180.0f / PI);
-
+    void LoadLegacy(const std::string& json_path)
+    {
+        CameraData cam;
+        _model = LegacySceneLoader::Load(json_path, cam);
+        _camera.Load(cam);
+        SetupOrbit();
+        _legacyOrbit    = true;
         _lastUpdateTime = std::chrono::high_resolution_clock::now();
         Render::Get().Init();
+        Render::Get().SetFrontFaceSign(1.0f); // legacy OBJ winding
     }
+
+    // ----- per-frame -----
 
     void Update(float /*deltaMs*/)
     {
         auto  now = std::chrono::high_resolution_clock::now();
         float dt  = std::chrono::duration_cast<std::chrono::duration<float>>(now - _lastUpdateTime).count();
         _lastUpdateTime = now;
-        dt = std::min(dt, 0.1f); // cap first-frame spike
+        dt = std::min(dt, 0.1f);
 
-        // FPS display (once per second)
         _fpsAccum += dt;
         ++_fpsFrames;
         if (_fpsAccum >= 1.0f) {
@@ -64,43 +61,34 @@ public:
             _fpsAccum  = 0.0f;
         }
 
-        // Orbit: advance angle then rebuild camera position and Y rotation.
-        // X and Z positions trace a circle of _orbitRadius around the origin.
-        // _orbitRotYOffset keeps the look-at direction aligned with the orbit.
-        _orbitAngle += _orbitSpeed * dt;
-
-        _camera.Position.x = _orbitRadius * std::sin(_orbitAngle);
-        _camera.Position.y = _orbitHeight;
-        _camera.Position.z = _orbitRadius * std::cos(_orbitAngle);
-        _camera.Rotation.y = _orbitAngle * (180.0f / PI) + _orbitRotYOffset;
-    }
-
-    // --- Capture helpers (used by the headless --capture screenshot path) ---
-    Camera& GetCamera() { return _camera; }
-    Light&  GetLight()  { return _light; }
-    float   GetOrbitAngleDeg() const { return _orbitAngle * (180.0f / PI); }
-
-    // Place the orbit camera at an absolute angle (degrees) facing the origin.
-    void SetOrbitAngleDeg(float deg)
-    {
-        _orbitAngle = deg * (PI / 180.0f);
-        _camera.Position.x = _orbitRadius * std::sin(_orbitAngle);
-        _camera.Position.y = _orbitHeight;
-        _camera.Position.z = _orbitRadius * std::cos(_orbitAngle);
-        _camera.Rotation.y = _orbitAngle * (180.0f / PI) + _orbitRotYOffset;
+        if (_legacyOrbit) {
+            _orbitAngle += _orbitSpeed * dt;
+            _camera.Position.x = _orbitRadius * std::sin(_orbitAngle);
+            _camera.Position.y = _orbitHeight;
+            _camera.Position.z = _orbitRadius * std::cos(_orbitAngle);
+            _camera.Rotation.y = _orbitAngle * (180.0f / PI) + _orbitRotYOffset;
+        }
     }
 
     void Render()
     {
-        Render::Get().UpdateViewMatrix(_camera);
-        Render::Get().UpdateProjectMatrix(_camera);
-        Render::Get().FrameStart(_camera, _light);
-        for (auto& go : _gameObjects) {
-            Render::Get().UpdateModelMatrix(go);
-            Render::Get().Draw(*go.mesh, *go.material);
+        if (_legacyOrbit) RebuildLegacyCamera();
+
+        Render::Get().SetCamera(_model.camera);
+        Render::Get().BeginFrame();
+        Render::Get().SetLight(_model.light);
+
+        for (const auto& obj : _model.objects) {
+            if (!obj.mesh) continue;
+            Render::Get().SetModelMatrices(obj.localToWorld, obj.worldToLocal);
+            const auto& subs = obj.mesh->submeshes;
+            for (size_t s = 0; s < subs.size(); ++s) {
+                Material* mat = MaterialForSubmesh(obj, s);
+                if (mat) Render::Get().Draw(*obj.mesh, subs[s], *mat);
+            }
         }
 
-        // Convert linear float color buffer -> sRGB bytes for SDL
+        // Convert linear float color buffer -> sRGB bytes for SDL (Y flipped).
         for (int y = 0; y < Config::kScreenHeight; ++y) {
             for (int x = 0; x < Config::kScreenWidth; ++x) {
                 float4 color = Render::Get().GetColor(x, Config::kScreenHeight - y - 1);
@@ -117,22 +105,65 @@ public:
         }
     }
 
+    // ----- capture helpers (legacy tutorial path) -----
+    Camera& GetCamera() { return _camera; }
+    Light&  GetLight()  { return _light; }
+    float   GetOrbitAngleDeg() const { return _orbitAngle * (180.0f / PI); }
+
+    void SetOrbitAngleDeg(float deg)
+    {
+        _orbitAngle = deg * (PI / 180.0f);
+        _camera.Position.x = _orbitRadius * std::sin(_orbitAngle);
+        _camera.Position.y = _orbitHeight;
+        _camera.Position.z = _orbitRadius * std::cos(_orbitAngle);
+        _camera.Rotation.y = _orbitAngle * (180.0f / PI) + _orbitRotYOffset;
+    }
+
 private:
-    Camera                  _camera;
-    Light                   _light;
-    std::vector<GameObject> _gameObjects;
+    SceneModel _model;
+    bool       _legacyOrbit = false;
+
+    // Legacy camera/light (only used by the orbit/capture path).
+    Camera _camera;
+    Light  _light;
+
+    // Re-derive the model camera from the legacy Camera (picks up orbit + any
+    // capture-time FOV tweaks), so Render stays purely matrix-driven.
+    void RebuildLegacyCamera()
+    {
+        _model.camera.view       = LegacyTransforms::BuildView(_camera.Position, _camera.Rotation);
+        _model.camera.projection = LegacyTransforms::BuildProjection(
+            _camera.Fov, _camera.Aspect, _camera.Near, _camera.Far);
+        _model.camera.position   = _camera.Position;
+        _model.camera.near       = _camera.Near;
+        _model.camera.far        = _camera.Far;
+    }
+
+    static Material* MaterialForSubmesh(const RenderObject& obj, size_t s)
+    {
+        if (obj.materials.empty()) return nullptr;
+        // Clamp: if fewer materials than submeshes, reuse the last (Unity behavior).
+        return obj.materials[std::min(s, obj.materials.size() - 1)];
+    }
+
+    void SetupOrbit()
+    {
+        _orbitRadius     = std::sqrt(_camera.Position.x * _camera.Position.x +
+                                     _camera.Position.z * _camera.Position.z);
+        _orbitHeight     = _camera.Position.y;
+        _orbitAngle      = std::atan2(_camera.Position.x, _camera.Position.z);
+        _orbitRotYOffset = _camera.Rotation.y - _orbitAngle * (180.0f / PI);
+    }
 
     // FPS counter
     float _fpsAccum  = 0.0f;
     int   _fpsFrames = 0;
-
-    // Per-frame wall-clock time (used for smooth animation delta)
     std::chrono::high_resolution_clock::time_point _lastUpdateTime;
 
     // Orbit animation state
-    float _orbitRadius     = 6.0f;   // horizontal distance from car center
-    float _orbitHeight     = 2.6f;   // camera Y (stays fixed during orbit)
-    float _orbitAngle      = 0.0f;   // current angle in radians
-    float _orbitRotYOffset = 180.0f; // constant offset so camera always faces center
-    float _orbitSpeed      = 0.5f;   // radians/second; full circle ~12.6s
+    float _orbitRadius     = 6.0f;
+    float _orbitHeight     = 2.6f;
+    float _orbitAngle      = 0.0f;
+    float _orbitRotYOffset = 180.0f;
+    float _orbitSpeed      = 0.5f;
 };

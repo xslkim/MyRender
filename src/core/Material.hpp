@@ -7,7 +7,11 @@
 class Material
 {
 public:
+    // Rasterizer cull mode (resolved from material `cull`; see RasterizeTri).
+    enum class Cull { Back, Front, Off };
+
     MaterialData    _data;
+    Cull            cull            = Cull::Back;
     VertexShader*   vertex_shader   = nullptr;
     FragmentShader* fragment_shader = nullptr;
 

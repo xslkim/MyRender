@@ -22,12 +22,11 @@ namespace gpu
 
     half SampleOcclusion(float2 uv)
     {
-#ifdef _OCCLUSIONMAP
+        if (!_OCCLUSIONMAP || _OcclusionMap == nullptr)
+            return half(1.0);
+        // URP reads occlusion from the green channel of the mask/occlusion map.
         half occ = SAMPLE_TEXTURE2D(_OcclusionMap, sampler_OcclusionMap, uv).g;
         return LerpWhiteTo(occ, _OcclusionStrength);
-#else
-        return half(1.0);
-#endif
     }
 
     inline void InitializeStandardLitSurfaceData(float2 uv, SurfaceData& outSurfaceData)
@@ -43,7 +42,6 @@ namespace gpu
         outSurfaceData.specular = half3(0.0, 0.0, 0.0);
 
         outSurfaceData.smoothness = specGloss.a;
-        float _BumpScale = 1.0f;
         outSurfaceData.normalTS = SampleNormal(uv, _BumpMap, sampler_BumpMap, _BumpScale);
         outSurfaceData.occlusion = SampleOcclusion(uv);
         outSurfaceData.emission = SampleEmission(uv, _EmissionColor.rgb, _EmissionMap, sampler_EmissionMap);

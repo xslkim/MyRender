@@ -1,7 +1,8 @@
 ﻿#pragma once
-#include "Render.hpp"
-#include "Camera.hpp"
+#include "LegacyTransforms.hpp"
 #include "test_utils.hpp"
+#include <fstream>
+#include "MetaData.hpp"
 
 void test_view_matrix()
 {
@@ -38,8 +39,7 @@ void test_view_matrix()
 			float m32 = item["m32"].template get<float>();
 			float m33 = item["m33"].template get<float>();
 
-			Render::Get().UpdateViewMatrix(Camera(Vec3f(pos_x, pos_y, pos_z), Vec3f(rot_x, rot_y, rot_z)));
-			MatrixEqual(gpu::UNITY_MATRIX_V,
+			MatrixEqual(LegacyTransforms::BuildView(Vec3f(pos_x, pos_y, pos_z), Vec3f(rot_x, rot_y, rot_z)),
 				m00, m01, m02, m03,
 				m10, m11, m12, m13,
 				m20, m21, m22, m23,
