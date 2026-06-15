@@ -31,7 +31,8 @@
       "scale": [2, 1, 2],
       "matrix": [2, 0, 0, 0, 0, 1, 0, 0, 0, 0, 2, 0, 0, 0, 0, 1],
       "worldToLocal": [0.5, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0.5, 0, 0, 0, 0, 1],
-      "skinned": false
+      "skinned": false,
+      "anim": ""
     },
     {
       "name": "Cube",
@@ -42,7 +43,8 @@
       "scale": [1, 1, 1],
       "matrix": [1, 0, 0, -2.5, 0, 1, 0, 0.5, 0, 0, 1, 0, 0, 0, 0, 1],
       "worldToLocal": [1, 0, 0, 2.5, 0, 1, 0, -0.5, 0, 0, 1, 0, 0, 0, 0, 1],
-      "skinned": false
+      "skinned": false,
+      "anim": ""
     },
     {
       "name": "Sphere",
@@ -53,7 +55,8 @@
       "scale": [1, 1, 1],
       "matrix": [1, 0, 0, 0, 0, 1, 0, 0.5, 0, 0, 1, 0, 0, 0, 0, 1],
       "worldToLocal": [1, 0, 0, 0, 0, 1, 0, -0.5, 0, 0, 1, 0, 0, 0, 0, 1],
-      "skinned": false
+      "skinned": false,
+      "anim": ""
     },
     {
       "name": "Capsule",
@@ -64,7 +67,8 @@
       "scale": [1, 1, 1],
       "matrix": [1, 0, 0, 2.5, 0, 1, 0, 1, 0, 0, 1, 0, 0, 0, 0, 1],
       "worldToLocal": [1, 0, 0, -2.5, 0, 1, 0, -1, 0, 0, 1, 0, 0, 0, 0, 1],
-      "skinned": false
+      "skinned": false,
+      "anim": ""
     },
     {
       "name": "Textured",
@@ -75,7 +79,20 @@
       "scale": [1.5, 1.5, 1.5],
       "matrix": [1.5, 0, 0, 0, 0, 1.5, 0, 2.4, 0, 0, 1.5, 0, 0, 0, 0, 1],
       "worldToLocal": [0.6666667, 0, 0, 0, 0, 0.6666667, 0, -1.60000014, 0, 0, 0.6666667, 0, 0, 0, 0, 1],
-      "skinned": false
+      "skinned": false,
+      "anim": ""
+    },
+    {
+      "name": "BarMesh",
+      "mesh": "meshes/Bar_-265690.mesh",
+      "materials": ["materials/Bar_Mat.mat.json"],
+      "position": [4.5, 0, 1.5],
+      "rotation": [0, 0, 0, 1],
+      "scale": [1, 1, 1],
+      "matrix": [1, 0, 0, 4.5, 0, 1, 0, 0, 0, 0, 1, 1.5, 0, 0, 0, 1],
+      "worldToLocal": [1, 0, 0, -4.5, 0, 1, 0, 0, 0, 0, 1, -1.5, 0, 0, 0, 1],
+      "skinned": true,
+      "anim": "anims/Bar_Bend.anim"
     }
   ]
 }
