@@ -233,13 +233,11 @@ namespace MyRenderExport
             if (cache.TryGetValue(m, out var rel)) return rel;
 
             string shaderName = m.shader != null ? m.shader.name : "";
-            string model = shaderName switch
-            {
-                "Universal Render Pipeline/Lit"        => "Lit",
-                "Universal Render Pipeline/Simple Lit" => "SimpleLit",
-                "Universal Render Pipeline/Unlit"      => "Unlit",
-                _                                       => "Fallback",
-            };
+            string model;
+            if      (shaderName == "Universal Render Pipeline/Lit")        model = "Lit";
+            else if (shaderName == "Universal Render Pipeline/Simple Lit") model = "SimpleLit";
+            else if (shaderName == "Universal Render Pipeline/Unlit")      model = "Unlit";
+            else                                                            model = "Fallback";
 
             string Tex(string prop, bool linear, bool isNormal = false)
             {

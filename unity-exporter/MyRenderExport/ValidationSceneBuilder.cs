@@ -132,7 +132,7 @@ namespace MyRenderExport
             var weights = new BoneWeight[rings * 4];
 
             // 4 corners of the square cross-section (XZ), with outward normals.
-            Vector2[] corner = { new(-1,-1), new(1,-1), new(1,1), new(-1,1) };
+            Vector2[] corner = { new Vector2(-1,-1), new Vector2(1,-1), new Vector2(1,1), new Vector2(-1,1) };
 
             for (int r = 0; r < rings; r++)
             {
