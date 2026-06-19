@@ -13,7 +13,7 @@ public:
         ndcPos = clipPos.xyz / clipPos.w;
         return float4(
             (ndcPos.x + 1.0f) * 0.5f * (Config::kScreenWidth  - 1),
-            (1.0f - ndcPos.y) * 0.5f * (Config::kScreenHeight - 1),
+            (ndcPos.y + 1.0f) * 0.5f * (Config::kScreenHeight - 1),
             ndcPos.z * 0.5f + 0.5f,
             clipPos.w
         );
