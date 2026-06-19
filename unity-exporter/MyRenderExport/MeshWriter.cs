@@ -57,45 +57,46 @@ namespace MyRenderExport
             if (hasColor) flags |= FlagHasColor;
 
             Directory.CreateDirectory(Path.GetDirectoryName(path));
-            using var bw = new BinaryWriter(File.Open(path, FileMode.Create));
-
-            bw.Write(new[] { 'M', 'R', 'S', 'H' });
-            bw.Write(Version);
-            bw.Write(flags);
-            bw.Write((uint)vc);
-            bw.Write((uint)allIndices.Count);
-            bw.Write((uint)sub);
-            bw.Write((uint)boneCount);
-
-            foreach (var r in ranges) { bw.Write((uint)r.start); bw.Write((uint)r.count); }
-
-            for (int i = 0; i < vc; i++)
+            using (var bw = new BinaryWriter(File.Open(path, FileMode.Create)))
             {
-                Write3(bw, positions[i]);
-                Write3(bw, normals[i]);
-                Write4(bw, tangents[i]);
-                Write2(bw, uv0[i]);
-                if (hasUV1)   Write2(bw, uv1[i]);
-                if (hasColor) WriteColor(bw, colors[i]);
-                if (hasSkin)
+                bw.Write(new[] { 'M', 'R', 'S', 'H' });
+                bw.Write(Version);
+                bw.Write(flags);
+                bw.Write((uint)vc);
+                bw.Write((uint)allIndices.Count);
+                bw.Write((uint)sub);
+                bw.Write((uint)boneCount);
+
+                foreach (var r in ranges) { bw.Write((uint)r.start); bw.Write((uint)r.count); }
+
+                for (int i = 0; i < vc; i++)
                 {
-                    BoneWeight w = boneWeights[i];
-                    bw.Write((ushort)w.boneIndex0); bw.Write((ushort)w.boneIndex1);
-                    bw.Write((ushort)w.boneIndex2); bw.Write((ushort)w.boneIndex3);
-                    bw.Write(w.weight0); bw.Write(w.weight1);
-                    bw.Write(w.weight2); bw.Write(w.weight3);
+                    Write3(bw, positions[i]);
+                    Write3(bw, normals[i]);
+                    Write4(bw, tangents[i]);
+                    Write2(bw, uv0[i]);
+                    if (hasUV1)   Write2(bw, uv1[i]);
+                    if (hasColor) WriteColor(bw, colors[i]);
+                    if (hasSkin)
+                    {
+                        BoneWeight w = boneWeights[i];
+                        bw.Write((ushort)w.boneIndex0); bw.Write((ushort)w.boneIndex1);
+                        bw.Write((ushort)w.boneIndex2); bw.Write((ushort)w.boneIndex3);
+                        bw.Write(w.weight0); bw.Write(w.weight1);
+                        bw.Write(w.weight2); bw.Write(w.weight3);
+                    }
                 }
+
+                foreach (int idx in allIndices) bw.Write((uint)idx);
+
+                // Bindposes (row-major), one 4x4 per bone. The runtime bakes these into
+                // the .anim skinning matrices and skips them, but the format carries them.
+                if (hasSkin)
+                    foreach (var m in bindposes)
+                        for (int r = 0; r < 4; r++)
+                            for (int c = 0; c < 4; c++)
+                                bw.Write(m[r, c]);
             }
-
-            foreach (int idx in allIndices) bw.Write((uint)idx);
-
-            // Bindposes (row-major), one 4x4 per bone. The runtime bakes these into
-            // the .anim skinning matrices and skips them, but the format carries them.
-            if (hasSkin)
-                foreach (var m in bindposes)
-                    for (int r = 0; r < 4; r++)
-                        for (int c = 0; c < 4; c++)
-                            bw.Write(m[r, c]);
         }
 
         static Vector4[] Filled(int n, Vector4 v) { var a = new Vector4[n]; for (int i = 0; i < n; i++) a[i] = v; return a; }

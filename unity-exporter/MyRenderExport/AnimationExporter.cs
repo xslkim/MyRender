@@ -37,39 +37,41 @@ namespace MyRenderExport
             string abs = Path.Combine(outRoot, rel);
             Directory.CreateDirectory(Path.GetDirectoryName(abs));
 
-            using var bw = new BinaryWriter(File.Open(abs, FileMode.Create));
-            bw.Write(new[] { 'M', 'R', 'A', 'N' });
-            bw.Write(Version);
-            bw.Write((ushort)0);          // flags
-            bw.Write((float)fps);
-            bw.Write((uint)frameCount);
-            bw.Write((uint)boneCount);
-
-            AnimationMode.StartAnimationMode();
-            try
+            using (var bw = new BinaryWriter(File.Open(abs, FileMode.Create)))
             {
-                for (int f = 0; f < frameCount; f++)
+                bw.Write(new[] { 'M', 'R', 'A', 'N' });
+                bw.Write(Version);
+                bw.Write((ushort)0);          // flags
+                bw.Write((float)fps);
+                bw.Write((uint)frameCount);
+                bw.Write((uint)boneCount);
+
+                AnimationMode.StartAnimationMode();
+                try
                 {
-                    float t = (frameCount > 1) ? (f / (float)fps) : 0f;
-                    t = Mathf.Min(t, clip.length);
-
-                    AnimationMode.BeginSampling();
-                    AnimationMode.SampleAnimationClip(root, clip, t);
-                    AnimationMode.EndSampling();
-
-                    for (int b = 0; b < boneCount; b++)
+                    for (int f = 0; f < frameCount; f++)
                     {
-                        // S = bone.localToWorld · bindpose  (mesh-local -> world)
-                        Matrix4x4 s = bones[b].localToWorldMatrix * bind[b];
-                        for (int r = 0; r < 4; r++)
-                            for (int c = 0; c < 4; c++)
-                                bw.Write(s[r, c]);
+                        float t = (frameCount > 1) ? (f / (float)fps) : 0f;
+                        t = Mathf.Min(t, clip.length);
+
+                        AnimationMode.BeginSampling();
+                        AnimationMode.SampleAnimationClip(root, clip, t);
+                        AnimationMode.EndSampling();
+
+                        for (int b = 0; b < boneCount; b++)
+                        {
+                            // S = bone.localToWorld · bindpose  (mesh-local -> world)
+                            Matrix4x4 s = bones[b].localToWorldMatrix * bind[b];
+                            for (int r = 0; r < 4; r++)
+                                for (int c = 0; c < 4; c++)
+                                    bw.Write(s[r, c]);
+                        }
                     }
                 }
-            }
-            finally
-            {
-                AnimationMode.StopAnimationMode();
+                finally
+                {
+                    AnimationMode.StopAnimationMode();
+                }
             }
 
             Debug.Log($"[MyRender] Baked anim '{clip.name}' -> {rel} " +
