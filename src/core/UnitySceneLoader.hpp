@@ -23,11 +23,12 @@ public:
         asset::SceneAsset a = nlohmann::json::parse(f).get<asset::SceneAsset>();
 
         SceneModel model;
-        model.camera.view       = a.camera.worldToCamera;
-        model.camera.projection = a.camera.projection;
-        model.camera.position   = a.camera.position;
-        model.camera.near       = a.camera.near;
-        model.camera.far        = a.camera.far;
+        model.camera.view            = a.camera.worldToCamera;
+        model.camera.projection      = a.camera.projection;
+        model.camera.position        = a.camera.position;
+        model.camera.near            = a.camera.near;
+        model.camera.far             = a.camera.far;
+        model.camera.backgroundColor = a.camera.backgroundColor;
 
         model.light.direction = a.light.direction;
         model.light.color     = a.light.color;

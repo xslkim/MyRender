@@ -79,6 +79,17 @@ public:
         gpu::_ProjectionParams.w   = 1.0f / cam.far;
         gpu::_ScaledScreenParams.x = Config::kScreenWidth;
         gpu::_ScaledScreenParams.y = Config::kScreenHeight;
+
+        if (cam.backgroundColor != _defaultColor) {
+            _defaultColor = cam.backgroundColor;
+            for (int i = 0; i < Config::kScreenWidth * Config::kScreenHeight; ++i) {
+                int k = i * 4;
+                _defaultColorBuf[k + 0] = _defaultColor.r;
+                _defaultColorBuf[k + 1] = _defaultColor.g;
+                _defaultColorBuf[k + 2] = _defaultColor.b;
+                _defaultColorBuf[k + 3] = _defaultColor.w;
+            }
+        }
     }
 
     void SetLight(const LightState& light)

@@ -20,6 +20,7 @@ struct CameraState {
     float3   position;
     float    near = 0.3f;
     float    far  = 1000.0f;
+    Color    backgroundColor = Color(0, 0, 0, 1);
 };
 
 struct LightState {
