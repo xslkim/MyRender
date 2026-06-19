@@ -1,0 +1,23 @@
+{
+  "name": "Metal_Simple_Mat",
+  "shaderModel": "Lit",
+  "sourceShader": "Universal Render Pipeline/Lit",
+  "surfaceType": "opaque",
+  "cull": "back",
+  "alphaClip": false,
+  "cutoff": 0.5,
+  "baseColor": [1, 1, 1, 1],
+  "baseMap": "textures/Metal_Albedo.tga",
+  "tiling": [4, 4],
+  "offset": [0, 0],
+  "normalMap": "textures/Metal_Normal.tga",
+  "normalScale": 1,
+  "metallic": 0,
+  "smoothness": 1,
+  "metallicGlossMap": "textures/Metal_MetallicSmoothness.tga",
+  "smoothnessChannel": "metallicAlpha",
+  "occlusionMap": "",
+  "occlusionStrength": 1,
+  "emissionColor": [0, 0, 0],
+  "emissionMap": ""
+}

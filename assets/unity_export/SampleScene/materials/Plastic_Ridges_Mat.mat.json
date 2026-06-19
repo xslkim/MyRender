@@ -1,0 +1,23 @@
+{
+  "name": "Plastic_Ridges_Mat",
+  "shaderModel": "Lit",
+  "sourceShader": "Universal Render Pipeline/Lit",
+  "surfaceType": "opaque",
+  "cull": "back",
+  "alphaClip": false,
+  "cutoff": 0.5,
+  "baseColor": [0.8235294, 0.8235294, 0.8235294, 1],
+  "baseMap": "textures/PlasticRidges_Albedo.tga",
+  "tiling": [3, 8],
+  "offset": [0, 0],
+  "normalMap": "textures/PlasticRidges_Normal.tga",
+  "normalScale": 1,
+  "metallic": 0,
+  "smoothness": 1,
+  "metallicGlossMap": "textures/PlasticRidges_MetallicOcculusionSmoothness.tga",
+  "smoothnessChannel": "metallicAlpha",
+  "occlusionMap": "textures/PlasticRidges_MetallicOcculusionSmoothness.tga",
+  "occlusionStrength": 1,
+  "emissionColor": [0, 0, 0],
+  "emissionMap": ""
+}

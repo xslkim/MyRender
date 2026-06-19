@@ -505,8 +505,9 @@ private:
         // Bounding box, clamped to screen and this thread's Y strip
         int minX = std::max(0,                       (int)std::min(s0.x, std::min(s1.x, s2.x)));
         int maxX = std::min(Config::kScreenWidth - 1, (int)std::max(s0.x, std::max(s1.x, s2.x)));
-        int minY = std::max(yStart,                   (int)std::min(s0.y, std::min(s1.y, s2.y)));
+        int minY = std::max(yStart, (int)std::min(s0.y, std::min(s1.y, s2.y)));
         int maxY = std::min(yEnd - 1,                 (int)std::max(s0.y, std::max(s1.y, s2.y)));
+
 
         if (minX > maxX || minY > maxY) return;
 

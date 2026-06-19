@@ -88,10 +88,20 @@ private:
         std::vector<Vertex> verts;
         verts.reserve(vertexCount);
         for (uint32_t i = 0; i < vertexCount; ++i) {
-            Vec3f pos(f32(), f32(), f32());
-            Vec3f nrm(f32(), f32(), f32());
-            Vec4f tan(f32(), f32(), f32(), f32());
-            Vec2f uv0(f32(), f32());
+            // Read fields with explicit sequencing. The naive form
+            //   Vec3f pos(f32(), f32(), f32());
+            // has unspecified argument-evaluation order: under MSVC optimizations the
+            // three f32() calls (each advancing the stream) can run out of order,
+            // swapping X/Y/Z (and u/v, normal components). Assigning to named locals
+            // first forces left-to-right evaluation.
+            float px = f32(), py = f32(), pz = f32();
+            Vec3f pos(px, py, pz);
+            float nx = f32(), ny = f32(), nz = f32();
+            Vec3f nrm(nx, ny, nz);
+            float tx = f32(), ty = f32(), tz = f32(), tw = f32();
+            Vec4f tan(tx, ty, tz, tw);
+            float uu = f32(), vv = f32();
+            Vec2f uv0(uu, vv);
             if (hasUV1)   { f32(); f32(); }
             if (hasColor) { f32(); f32(); f32(); f32(); }
             Vertex v(pos, uv0, nrm);

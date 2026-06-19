@@ -31,7 +31,7 @@ public:
         model.camera.backgroundColor = a.camera.backgroundColor;
 
         model.light.direction = a.light.direction;
-        model.light.color     = a.light.color;
+        model.light.color     = a.light.color * a.light.intensity;
         model.light.intensity = a.light.intensity;
 
         model.ambientColor     = a.ambientColor;

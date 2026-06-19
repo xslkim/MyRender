@@ -1,0 +1,23 @@
+{
+  "name": "Liquid_Mat",
+  "shaderModel": "Lit",
+  "sourceShader": "Universal Render Pipeline/Lit",
+  "surfaceType": "transparent",
+  "cull": "back",
+  "alphaClip": false,
+  "cutoff": 0.5,
+  "baseColor": [0.952830136, 0.9241496, 0.346075028, 0.4627451],
+  "baseMap": "",
+  "tiling": [1, 1],
+  "offset": [0, 0],
+  "normalMap": "",
+  "normalScale": 1,
+  "metallic": 0,
+  "smoothness": 0.15,
+  "metallicGlossMap": "",
+  "smoothnessChannel": "metallicAlpha",
+  "occlusionMap": "",
+  "occlusionStrength": 1,
+  "emissionColor": [0, 0, 0],
+  "emissionMap": ""
+}

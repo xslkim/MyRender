@@ -1,0 +1,23 @@
+{
+  "name": "Plastic_Yellow_Mat",
+  "shaderModel": "Lit",
+  "sourceShader": "Universal Render Pipeline/Lit",
+  "surfaceType": "opaque",
+  "cull": "back",
+  "alphaClip": false,
+  "cutoff": 0.5,
+  "baseColor": [1, 0.8687334, 0.06274505, 1],
+  "baseMap": "textures/Plastic_AlbedoSmoothness.tga",
+  "tiling": [3, 3],
+  "offset": [0, 0],
+  "normalMap": "textures/Plastic_Normal.tga",
+  "normalScale": 1,
+  "metallic": 0,
+  "smoothness": 1,
+  "metallicGlossMap": "",
+  "smoothnessChannel": "albedoAlpha",
+  "occlusionMap": "",
+  "occlusionStrength": 1,
+  "emissionColor": [0, 0, 0],
+  "emissionMap": ""
+}

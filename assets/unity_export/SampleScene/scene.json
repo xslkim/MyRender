@@ -1,0 +1,39 @@
+{
+  "name": "SampleScene",
+  "unityVersion": "2019.4.40f1c1",
+  "coordinateSystem": "unity-lh-yup-zforward-meters",
+  "camera": {
+  "position": [2.32, 1.203, 3.3],
+  "rotation": [-0.0155725516, 0.984337866, -0.117637672, -0.130375877],
+  "worldToCameraMatrix": [-0.9655193, 1.69239938E-05, 0.260331661, 1.38088989, -0.0613315329, 0.971837759, -0.227529868, -0.2759831, 0.253003985, 0.235651, 0.9383271, -3.966937, 0, 0, 0, 1],
+  "projectionMatrix": [0.974278569, 0, 0, 0, 0, 1.73205078, 0, 0, 0, 0, -1.0006001, -0.60018003, 0, 0, -1, 0],
+  "fovVertical": 60,
+  "near": 0.3,
+  "far": 1000,
+  "aspect": 1.77777779,
+  "orthographic": false,
+  "orthoSize": 5,
+  "backgroundColor": [0.03071344, 0.07421358, 0.191201672, 0]
+},
+  "mainLight": {
+  "direction": [0.5416752, -0.707106769, -0.45451948],
+  "rotation": [0.7064338, 0.477714419, 0.0308435671, 0.5213338],
+  "color": [1, 0.904661357, 0.6724432],
+  "intensity": 2
+},
+  "ambient": { "color": [0.2850269, 0.371393442, 0.496010453], "intensity": 1.0 },
+  "objects": [
+    {
+      "name": "Ground",
+      "mesh": "meshes/ground_11702.mesh",
+      "materials": ["materials/Ground_Mat.mat.json", "materials/Stud_Mat.mat.json", "materials/Metal_Simple_Mat.mat.json"],
+      "position": [0, 0, 0],
+      "rotation": [0, 0.7071068, 0, 0.7071068],
+      "scale": [1.00000024, 1, 1.00000024],
+      "matrix": [-1.1920929E-07, 0, 1.00000012, 0, 0, 1, 0, 0, -1.00000012, 0, -1.1920929E-07, 0, 0, 0, 0, 1],
+      "worldToLocal": [-1.1920929E-07, 0, -1.00000012, 0, 0, 1, 0, 0, 1.00000012, 0, -1.1920929E-07, 0, 0, 0, 0, 1],
+      "skinned": false,
+      "anim": ""
+    }
+  ]
+}

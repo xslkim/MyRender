@@ -1,0 +1,23 @@
+{
+  "name": "Strap_Mat",
+  "shaderModel": "Lit",
+  "sourceShader": "Universal Render Pipeline/Lit",
+  "surfaceType": "opaque",
+  "cull": "back",
+  "alphaClip": false,
+  "cutoff": 0.5,
+  "baseColor": [1, 1, 1, 1],
+  "baseMap": "textures/PlasticRough_Albedo.tga",
+  "tiling": [6, 6],
+  "offset": [0, 0],
+  "normalMap": "textures/Elastic_Normal.tga",
+  "normalScale": 1,
+  "metallic": 0,
+  "smoothness": 1,
+  "metallicGlossMap": "textures/Elastic_MetallicOcculusionSmoothness.tga",
+  "smoothnessChannel": "metallicAlpha",
+  "occlusionMap": "textures/Elastic_MetallicOcculusionSmoothness.tga",
+  "occlusionStrength": 1,
+  "emissionColor": [0, 0, 0],
+  "emissionMap": ""
+}

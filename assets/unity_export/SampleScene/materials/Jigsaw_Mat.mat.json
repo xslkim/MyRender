@@ -1,0 +1,23 @@
+{
+  "name": "Jigsaw_Mat",
+  "shaderModel": "Lit",
+  "sourceShader": "Universal Render Pipeline/Lit",
+  "surfaceType": "opaque",
+  "cull": "back",
+  "alphaClip": false,
+  "cutoff": 0.5,
+  "baseColor": [0.9150943, 0.87006557, 0.7985493, 1],
+  "baseMap": "textures/Jigsaw_Albedo.tga",
+  "tiling": [1, 1],
+  "offset": [0, 0],
+  "normalMap": "textures/Jigsaw_Normal.tga",
+  "normalScale": 1,
+  "metallic": 0,
+  "smoothness": 1,
+  "metallicGlossMap": "textures/Jigsaw_MetallicOcculusionSmoothness.tga",
+  "smoothnessChannel": "metallicAlpha",
+  "occlusionMap": "textures/Jigsaw_MetallicOcculusionSmoothness.tga",
+  "occlusionStrength": 1,
+  "emissionColor": [0, 0, 0],
+  "emissionMap": ""
+}
