@@ -171,20 +171,28 @@ done
 ## 七、待办（明天的起点）
 
 - [x] ~~直接光过亮~~：已修复（1/π BRDF 归一化）。MSE 2465→1922。
-- [ ] **天空/背景区域偏暗/错**（1/π 修复后剩余误差主要在右上 gx5-7、右下角）。
-      调查 SkyboxPass + ACES：`skyboxVisualMid/Bot` 是 sRGB 输出值，经 lin3→ACES
-      双重处理。可能是 1/π 修复后天空相对更暗了。
-- [ ] **整体轻微偏暗**（平均 -2.4/-9/-15）：1/π 略有过度。可选：
-      (a) 保留 1/π（物理正确），单独提亮天空；(b) 用介于 1 和 1/π 之间的系数
-      （如 0.5）做经验调优。建议先 (a)。
-- [ ] 验证 1/π 修复不影响 legacy car 场景（已 sanity check，仍能渲染）。
+- [ ] **🔴 天空太暗（下一个最大单一误差源）**：
+      测量：天空右上区域 ours=34.6 vs ref=97.2（差 -62.6）；整条天空带 -24.3。
+      `skyboxVisualTop`=[0.24,0.34,0.52]（sRGB），lin3 后约 [0.045,0.092,0.22]（均值 0.12），
+      经 ACES+sRGB 输出后偏暗。**与 1/π 修复无关**（SkyboxPass 不走 BRDF），
+      是独立的预存问题。
+      建议方向：
+      (a) 检查 `SkyboxPass::SampleGradient`：`skyboxVisualMid`=[0.62,0.72,0.83]（sRGB）
+          才是天空主色（地平线以上大部分像素），`dir.y` 大的区域应更多用 Mid 而非 Top。
+          当前 k=15 让 Top 在 t>0.2 时几乎全占——可能混合权重过快。
+      (b) 检查这些 visual 颜色是否该直接当 sRGB 用（不经 lin3）——因为它们是
+          "visual appearance"（已经是屏幕上的颜色），而 UnitySceneLoader 把它们
+          当 linear 转。如果 Unity 导出的就是屏幕色，应跳过 lin3。
+      (c) 检查 ACES 对低值（0.12）的压缩是否过强。
+- [ ] **整体轻微偏暗**（平均 -2.4/-9/-15）：1/π 略有过度，主要也是天空贡献。
+      地板（+20.7）仍偏亮一点点。修天空后可能整体平衡更好。
+- [x] Legacy car 场景已 sanity check（仍能渲染）。
 - [ ] 用户重新导出场景（用新的 `ExportLightmap` RGBM 预解码导出器），届时运行时
       把 `_LIGHTMAP_RGBM_DECODE` 设 false 验证一致性。
 - [ ] 确认本场景 mixed lighting 模式（Baked Indirect vs Subtractive）。Subtractive
       需 `SubtractDirectMainLightFromLightmap`（目前 commented out）。
-- [ ] `_LIGHTMAP_INTENSITY` sweep 在我的构建里行为异常（改变值但 MSE 不变），
-      疑似 MSVC inline/whole-program 优化缓存全局变量——用 `volatile` 或 `-Od` 验证。
-      DV_BAKEDGI 已确认 lightmap 路径本身正常。
+- [ ] `_LIGHTMAP_INTENSITY` sweep 行为异常（疑似 MSVC 优化缓存全局）——用
+      `volatile` 或 `-Od` 验证。DV_BAKEDGI 已确认 lightmap 路径本身正常。
 
 ---
 
