@@ -4,7 +4,11 @@ using System.IO;
 using System.Text;
 using UnityEditor;
 using UnityEngine;
+using UnityEngine.Rendering;
 using UnityEngine.SceneManagement;
+#if UNITY_2019_1_OR_NEWER
+using UnityEngine.Rendering.Universal;
+#endif
 
 namespace MyRenderExport
 {
@@ -66,13 +70,26 @@ namespace MyRenderExport
                     AnimationClip clip = FindClip(smr);
                     if (clip != null) animRel = AnimationExporter.Export(smr, clip, outRoot, 30);
                 }
-                jb.Str("anim", animRel, last: true);
+                jb.Str("anim", animRel);
+                jb.Int("lightmapIndex", r.lightmapIndex);
+                jb.Vec4("lightmapScaleOffset", r.lightmapScaleOffset, last: true);
                 jb.End();
                 objects.Add(jb.ToString());
                 exported++;
             }
 
-            string sceneJson = BuildSceneJson(scene.name, objects);
+            // Export baked lightmap textures (if any).
+            var lightmapPaths = new List<string>();
+            var lmData = LightmapSettings.lightmaps;
+            for (int i = 0; i < lmData.Length; i++)
+            {
+                Texture2D lmTex = lmData[i].lightmapColor;
+                // Export as linear TGA; GetPixels() decodes RGBM → float, clamped to 0-1 in RGBA32.
+                string lmRel = lmTex != null ? ExportTexture(lmTex, outRoot, texPaths, /*linear=*/true) : "";
+                lightmapPaths.Add(lmRel);
+            }
+
+            string sceneJson = BuildSceneJson(scene.name, objects, lightmapPaths);
             File.WriteAllText(Path.Combine(outRoot, "scene.json"), sceneJson);
             AssetDatabase.Refresh();
 
@@ -83,7 +100,7 @@ namespace MyRenderExport
 
         // ---- scene.json assembly ----
 
-        static string BuildSceneJson(string name, List<string> objects)
+        static string BuildSceneJson(string name, List<string> objects, List<string> lightmapPaths = null)
         {
             var sb = new StringBuilder();
             sb.Append("{\n");
@@ -105,6 +122,18 @@ namespace MyRenderExport
             Color amb = ComputeFlatAmbient();
             sb.Append($"  \"ambient\": {{ \"color\": [{F(amb.r)}, {F(amb.g)}, {F(amb.b)}], \"intensity\": 1.0 }},\n");
 
+            sb.Append("  \"environment\": ");
+            sb.Append(EnvironmentJson());
+            sb.Append(",\n");
+
+            sb.Append("  \"postProcessing\": ");
+            sb.Append(PostProcessingJson());
+            sb.Append(",\n");
+
+            sb.Append("  \"additionalLights\": ");
+            sb.Append(AdditionalLightsJson());
+            sb.Append(",\n");
+
             sb.Append("  \"objects\": [\n");
             for (int i = 0; i < objects.Count; i++)
             {
@@ -112,7 +141,21 @@ namespace MyRenderExport
                 sb.Append(objects[i].Replace("\n", "\n    "));
                 sb.Append(i + 1 < objects.Count ? ",\n" : "\n");
             }
-            sb.Append("  ]\n}\n");
+            sb.Append("  ]");
+
+            // Lightmap texture paths (may be empty if scene has no baked lightmaps).
+            if (lightmapPaths != null && lightmapPaths.Count > 0)
+            {
+                sb.Append(",\n  \"lightmaps\": [");
+                for (int i = 0; i < lightmapPaths.Count; i++)
+                {
+                    sb.Append($"\"{Esc(lightmapPaths[i])}\"");
+                    if (i + 1 < lightmapPaths.Count) sb.Append(", ");
+                }
+                sb.Append("]");
+            }
+
+            sb.Append("\n}\n");
             return sb.ToString();
         }
 
@@ -161,6 +204,232 @@ namespace MyRenderExport
             jb.Num("intensity", l.intensity, last: true);
             jb.End();
             return jb.ToString();
+        }
+
+        // Export all non-directional lights: Point, Spot (Area not supported in URP real-time).
+        static string AdditionalLightsJson()
+        {
+            var sb2 = new StringBuilder();
+            sb2.Append("[");
+            bool first = true;
+            foreach (var l in Object.FindObjectsOfType<Light>())
+            {
+                if (!l.isActiveAndEnabled) continue;
+                if (l.type == LightType.Directional) continue; // already mainLight
+                if (l.type == LightType.Area) continue;        // baked only in URP
+
+                string typeStr = l.type == LightType.Spot ? "spot" : "point";
+                Vector3 pos = l.transform.position;
+                Color col = l.color.linear;
+                float range = l.range;
+                float intensity = l.intensity;
+                Vector3 dir = l.transform.forward;
+                float spotOuter = l.type == LightType.Spot ? l.spotAngle       : 0f;
+                float spotInner = l.type == LightType.Spot ? l.innerSpotAngle  : 0f;
+
+                if (!first) sb2.Append(",\n");
+                first = false;
+                sb2.Append($"{{\"type\":\"{typeStr}\"," +
+                           $"\"position\":[{F(pos.x)},{F(pos.y)},{F(pos.z)}]," +
+                           $"\"color\":[{F(col.r)},{F(col.g)},{F(col.b)}]," +
+                           $"\"intensity\":{F(intensity)}," +
+                           $"\"range\":{F(range)}," +
+                           $"\"direction\":[{F(dir.x)},{F(dir.y)},{F(dir.z)}]," +
+                           $"\"spotAngleOuter\":{F(spotOuter)}," +
+                           $"\"spotAngleInner\":{F(spotInner)}}}");
+            }
+            sb2.Append("]");
+            return sb2.ToString();
+        }
+
+        // Export sky/equator/ground gradient colors + SH9 for A1/A2.
+        // sky/equator/groundColor: from RenderSettings tricolor — these are ambient IRRADIANCE
+        //   colors used for lighting, NOT the visual skybox appearance.
+        // skyboxVisual*: the actual visual colours you see in the skybox background, read from
+        //   the skybox material. Used by SkyboxPass for background pixel colouring.
+        // sh[27]: raw SphericalHarmonicsL2 coefficients, channel-major (r*9, g*9, b*9).
+        static string EnvironmentJson()
+        {
+            string modeStr;
+            switch (RenderSettings.ambientMode)
+            {
+                case UnityEngine.Rendering.AmbientMode.Skybox:   modeStr = "skybox";   break;
+                case UnityEngine.Rendering.AmbientMode.Trilight: modeStr = "trilight"; break;
+                default:                                          modeStr = "color";    break;
+            }
+
+            Color sky     = RenderSettings.ambientSkyColor.linear;
+            Color equator = RenderSettings.ambientEquatorColor.linear;
+            Color ground  = RenderSettings.ambientGroundColor.linear;
+
+            // ---- Visual skybox colours (for background rendering) ----
+            // Render the skybox to a tiny cubemap and sample three directions:
+            //   +Y = zenith (sky top), +Z = horizon (sky mid), -Y = nadir (sky bot).
+            // This captures the actual rendered sky colour (atmospheric scattering, exposure,
+            // etc.) rather than just _SkyTint * exposure, which is far too bright.
+            Color visTop = new Color(0.5f, 0.5f, 0.5f);
+            Color visMid = new Color(0.4f, 0.4f, 0.4f);
+            Color visBot = new Color(0.1f, 0.1f, 0.1f);
+            float skyboxExposure = 1.0f;
+
+            Material skyMat = RenderSettings.skybox;
+            if (skyMat != null && skyMat.HasProperty("_Exposure"))
+                skyboxExposure = skyMat.GetFloat("_Exposure");
+
+            if (skyMat != null)
+            {
+                bool captured = false;
+                Cubemap cube = null;
+                GameObject camGo = null;
+                try
+                {
+                    cube  = new Cubemap(8, TextureFormat.RGBAFloat, false);
+                    camGo = new GameObject("__MyRender_SkyCap__");
+                    Camera skyCam = camGo.AddComponent<Camera>();
+                    skyCam.clearFlags  = CameraClearFlags.Skybox;
+                    skyCam.cullingMask = 0; // sky only — no geometry
+                    skyCam.nearClipPlane = 0.01f;
+                    skyCam.farClipPlane  = 10000f;
+                    captured = skyCam.RenderToCubemap(cube);
+                }
+                catch (System.Exception ex)
+                {
+                    UnityEngine.Debug.LogWarning("[MyRenderExporter] RenderToCubemap failed: " + ex.Message);
+                }
+                finally
+                {
+                    if (camGo != null) Object.DestroyImmediate(camGo);
+                }
+
+                if (captured && cube != null)
+                {
+                    // Average the 4 centre pixels of each face for stability.
+                    Color FaceCenter(Cubemap c, CubemapFace face)
+                    {
+                        Color[] px = c.GetPixels(face);
+                        int n = px.Length, h = (int)Mathf.Sqrt(n);
+                        int cy = h / 2, cx = h / 2;
+                        // average 2×2 block near centre
+                        Color avg = Color.black;
+                        int cnt = 0;
+                        for (int dy = -1; dy <= 0; dy++) for (int dx = -1; dx <= 0; dx++)
+                        {
+                            int r = cy+dy, cc = cx+dx;
+                            if (r >= 0 && r < h && cc >= 0 && cc < h)
+                            { avg += px[r*h + cc]; cnt++; }
+                        }
+                        return cnt > 0 ? avg / cnt : px[n/2];
+                    }
+                    visTop = FaceCenter(cube, CubemapFace.PositiveY);
+                    visMid = FaceCenter(cube, CubemapFace.PositiveZ);
+                    visBot = FaceCenter(cube, CubemapFace.NegativeY);
+                    Object.DestroyImmediate(cube);
+                }
+                else
+                {
+                    // Fallback: material property reading (less accurate for Procedural sky)
+                    if (cube != null) Object.DestroyImmediate(cube);
+                    if (skyMat.HasProperty("_SkyTint"))
+                    {
+                        Color t = skyMat.GetColor("_SkyTint").linear * skyboxExposure;
+                        visTop = t;
+                        visMid = Color.Lerp(t, visBot, 0.4f);
+                    }
+                    else if (skyMat.HasProperty("_Tint"))
+                    {
+                        Color t = skyMat.GetColor("_Tint").linear * skyboxExposure;
+                        visTop = t; visMid = t;
+                    }
+                    else
+                    {
+                        const float kPi = 3.14159265f;
+                        visTop = sky * kPi * skyboxExposure;
+                        visMid = equator * kPi * skyboxExposure;
+                        visBot = ground * kPi * skyboxExposure;
+                    }
+                    if (skyMat.HasProperty("_GroundColor"))
+                        visBot = skyMat.GetColor("_GroundColor").linear * skyboxExposure;
+                }
+            }
+
+            // SH9 coefficients for A2: raw SphericalHarmonicsL2 values.
+            // Layout: sh[channel*9 + basis], channel: 0=R 1=G 2=B, basis: 0..8 (L0+L1+L2).
+            var probe = RenderSettings.ambientProbe;
+            var sb2 = new System.Text.StringBuilder();
+            sb2.Append("[");
+            for (int c = 0; c < 3; c++)
+                for (int i = 0; i < 9; i++)
+                {
+                    sb2.Append(F(probe[c, i]));
+                    if (c != 2 || i != 8) sb2.Append(", ");
+                }
+            sb2.Append("]");
+
+            return $"{{\n  \"ambientMode\": \"{modeStr}\",\n" +
+                   $"  \"skyColor\":     [{F(sky.r)}, {F(sky.g)}, {F(sky.b)}],\n" +
+                   $"  \"equatorColor\": [{F(equator.r)}, {F(equator.g)}, {F(equator.b)}],\n" +
+                   $"  \"groundColor\":  [{F(ground.r)}, {F(ground.g)}, {F(ground.b)}],\n" +
+                   $"  \"skyboxVisualTop\": [{F(visTop.r)}, {F(visTop.g)}, {F(visTop.b)}],\n" +
+                   $"  \"skyboxVisualMid\": [{F(visMid.r)}, {F(visMid.g)}, {F(visMid.b)}],\n" +
+                   $"  \"skyboxVisualBot\": [{F(visBot.r)}, {F(visBot.g)}, {F(visBot.b)}],\n" +
+                   $"  \"skyboxExposure\": {F(skyboxExposure)},\n" +
+                   $"  \"sh\": {sb2}\n}}";
+        }
+
+        // Export post-processing Volume settings (tonemapping, bloom, color adjustments).
+        // Iterates all global Volumes; takes settings from the first profile that has each component.
+        static string PostProcessingJson()
+        {
+            string tonemapping = "none";
+            float  exposure    = 0.0f;   // EV100 post-exposure (ColorAdjustments.postExposure)
+            float  contrast    = 0.0f;   // ColorAdjustments.contrast  (-100..100)
+            float  saturation  = 0.0f;   // ColorAdjustments.saturation (-100..100)
+            float  bloomThresh = 1.0f;
+            float  bloomInt    = 0.0f;
+            bool   bloomOn     = false;
+
+#if UNITY_2019_1_OR_NEWER
+            foreach (var v in Object.FindObjectsOfType<Volume>())
+            {
+                if (v.profile == null) continue;
+
+                Tonemapping tm;
+                if (v.profile.TryGet(out tm) && tm.active)
+                {
+                    switch (tm.mode.value)
+                    {
+                        case TonemappingMode.ACES:    tonemapping = "aces";    break;
+                        case TonemappingMode.Neutral: tonemapping = "neutral"; break;
+                        default:                      tonemapping = "none";    break;
+                    }
+                }
+
+                ColorAdjustments ca;
+                if (v.profile.TryGet(out ca) && ca.active)
+                {
+                    exposure   = ca.postExposure.value;
+                    contrast   = ca.contrast.value;
+                    saturation = ca.saturation.value;
+                }
+
+                Bloom bl;
+                if (v.profile.TryGet(out bl) && bl.active)
+                {
+                    bloomOn     = true;
+                    bloomThresh = bl.threshold.value;
+                    bloomInt    = bl.intensity.value;
+                }
+            }
+#endif
+
+            return $"{{\n" +
+                   $"  \"tonemapping\": \"{tonemapping}\",\n" +
+                   $"  \"postExposure\": {F(exposure)},\n" +
+                   $"  \"contrast\": {F(contrast)},\n" +
+                   $"  \"saturation\": {F(saturation)},\n" +
+                   $"  \"bloomEnabled\": {(bloomOn ? "true" : "false")},\n" +
+                   $"  \"bloomThreshold\": {F(bloomThresh)},\n" +
+                   $"  \"bloomIntensity\": {F(bloomInt)}\n}}";
         }
 
         // Flat indirect ambient: in Skybox mode we average the ambient probe over
@@ -326,9 +595,11 @@ namespace MyRenderExport
 
             public void Str(string k, string v, bool last = false) { Key(k); _sb.Append($"\"{Esc(v)}\""); Tail(last); }
             public void Num(string k, float v, bool last = false) { Key(k); _sb.Append(F(v)); Tail(last); }
+            public void Int(string k, int v, bool last = false) { Key(k); _sb.Append(v); Tail(last); }
             public void Bool(string k, bool v, bool last = false) { Key(k); _sb.Append(v ? "true" : "false"); Tail(last); }
             public void Vec2(string k, Vector2 v, bool last = false) { Key(k); _sb.Append($"[{F(v.x)}, {F(v.y)}]"); Tail(last); }
             public void Vec3(string k, Vector3 v, bool last = false) { Key(k); _sb.Append($"[{F(v.x)}, {F(v.y)}, {F(v.z)}]"); Tail(last); }
+            public void Vec4(string k, Vector4 v, bool last = false) { Key(k); _sb.Append($"[{F(v.x)}, {F(v.y)}, {F(v.z)}, {F(v.w)}]"); Tail(last); }
             public void Quat(string k, Quaternion q, bool last = false) { Key(k); _sb.Append($"[{F(q.x)}, {F(q.y)}, {F(q.z)}, {F(q.w)}]"); Tail(last); }
             public void Color3(string k, Color c, bool last = false) { Key(k); _sb.Append($"[{F(c.r)}, {F(c.g)}, {F(c.b)}]"); Tail(last); }
             public void Color4(string k, Color c, bool last = false) { Key(k); _sb.Append($"[{F(c.r)}, {F(c.g)}, {F(c.b)}, {F(c.a)}]"); Tail(last); }

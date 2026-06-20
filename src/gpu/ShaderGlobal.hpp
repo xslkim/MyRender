@@ -94,10 +94,34 @@ namespace gpu
 
     float4x4 UNITY_MATRIX_P;
 
-    // Flat environment ambient (indirect diffuse fill). Real Unity outdoor scenes
-    // get most of their fill from the skybox SH probe, which this port doesn't
-    // sample; we approximate it with one constant color uploaded from the scene.
+    // Per-material baked lightmap scale (approximates missing baked GI; default=1).
+    // Ignored when _LIGHTMAP is true (real lightmap overrides this).
+    half3 _BakedGIColor = half3(1, 1, 1);
+
+    // Baked lightmap (per-object). Null when no lightmap was exported for the object.
+    // _LightmapST = (scaleX, scaleY, offsetX, offsetY) mapping UV2 → lightmap UVs.
+    Texture2D*   _Lightmap    = nullptr;
+    SamplerState sampler_Lightmap;
+    float4       _LightmapST  = float4(1, 1, 0, 0);
+    bool         _LIGHTMAP    = false;
+
+    // Flat fallback ambient (used when SH data is absent).
     half3 _AmbientColor = half3(0, 0, 0);
+
+    // L2 Spherical Harmonics ambient probe (A2).
+    // Layout: sh[c*9 + i], c=0R/1G/2B, i=0..8 (L0+L1+L2 basis indices).
+    // Uploaded once per frame from scene.json "environment.sh" (27 floats).
+    float _SH9[27]    = {};
+    bool  _SH9_VALID  = false;
+
+    // Indirect specular (A3): fallback flat colour when no cubemap probe is available.
+    // Set to the SH L0 average when SH is uploaded; zero otherwise.
+    half4 _GlossyEnvironmentColor = half4(0, 0, 0, 1);
+
+    // HDR decode parameters for the specCube (A3).
+    // (1,1,0,0) = linear pass-through so DecodeHDREnvironment is a no-op multiplier.
+    // Set once at startup; overridden when a real cubemap probe is loaded.
+    float4 unity_SpecCube0_HDR = float4(1, 1, 0, 0);
 
     //这个实际上是主光源的方向
     float4 _MainLightPosition;
@@ -107,6 +131,18 @@ namespace gpu
     uint _MainLightLayerMask = 1;
     half4 unity_LightData(0,0,0,0);
     half4 unity_LightIndices[2]; //(光源数据相关, 光源总数、光源偏移量、光源索引)
+
+    // Additional point/spot lights (D1).
+    // _AdditionalLightsColor stores pre-multiplied color * intensity.
+    // _AdditionalLightsPosition stores world-space XYZ + 1/range^2 in W (for attenuation).
+    // _AdditionalLightsSpotDir stores spot direction XYZ + cos(halfOuterAngle) in W.
+    // _AdditionalLightsAttenuation stores (cos(halfInner)-cos(halfOuter)) falloff ramp in X.
+    static constexpr int MAX_ADDITIONAL_LIGHTS = 16;
+    int    _AdditionalLightsCount = 0;
+    float4 _AdditionalLightsPosition  [MAX_ADDITIONAL_LIGHTS];
+    half4  _AdditionalLightsColor      [MAX_ADDITIONAL_LIGHTS];
+    half4  _AdditionalLightsSpotDir    [MAX_ADDITIONAL_LIGHTS];
+    float4 _AdditionalLightsAttenuation[MAX_ADDITIONAL_LIGHTS];
 
     bool _ALPHAPREMULTIPLY_ON = false;
     bool _SPECGLOSSMAP = false;
@@ -164,6 +200,12 @@ namespace gpu
     float*   _ShadowDepth = nullptr;  // pointer to kShadowRes² depth buffer in [0,1]
     float    _ShadowBias  = 0.002f;   // constant depth bias to prevent self-shadowing acne
     bool     _SHADOWS_ENABLED = false;
+
+    // Spot light shadow map (index-0 spot only).
+    float4x4 _SpotLightVP;
+    float*   _SpotShadowDepth      = nullptr;
+    bool     _SPOT_SHADOWS_ENABLED = false;
+    float    _SpotShadowBias       = 0.005f;
     Color _BaseColor;
     Color _SpecColor;
     real _Cutoff;

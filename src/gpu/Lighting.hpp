@@ -306,39 +306,20 @@ half4 UniversalFragmentPBR(InputData inputData, SurfaceData surfaceData)
                                                               surfaceData.clearCoatMask, specularHighlightsOff);
     }
 
-    #if defined(_ADDITIONAL_LIGHTS)
-    uint pixelLightCount = GetAdditionalLightsCount();
-
-    #if USE_FORWARD_PLUS
-    [loop] for (uint lightIndex = 0; lightIndex < min(URP_FP_DIRECTIONAL_LIGHTS_COUNT, MAX_VISIBLE_LIGHTS); lightIndex++)
+    // Additional point/spot lights (D1): always active when lights are uploaded.
     {
-        FORWARD_PLUS_SUBTRACTIVE_LIGHT_CHECK
-
-        Light light = GetAdditionalLight(lightIndex, inputData, shadowMask, aoFactor);
-
-#ifdef _LIGHT_LAYERS
-        if (IsMatchingLightLayer(light.layerMask, meshRenderingLayers))
-#endif
+        int pixelLightCount = GetAdditionalLightsCount();
+        for (int li = 0; li < pixelLightCount; ++li)
         {
+            Light light = GetAdditionalLight(li, inputData.positionWS);
             lightingData.additionalLightsColor += LightingPhysicallyBased(brdfData, brdfDataClearCoat, light,
                                                                           inputData.normalWS, inputData.viewDirectionWS,
                                                                           surfaceData.clearCoatMask, specularHighlightsOff);
         }
     }
-    #endif
 
-    LIGHT_LOOP_BEGIN(pixelLightCount)
-        Light light = GetAdditionalLight(lightIndex, inputData, shadowMask, aoFactor);
-
-#ifdef _LIGHT_LAYERS
-        if (IsMatchingLightLayer(light.layerMask, meshRenderingLayers))
-#endif
-        {
-            lightingData.additionalLightsColor += LightingPhysicallyBased(brdfData, brdfDataClearCoat, light,
-                                                                          inputData.normalWS, inputData.viewDirectionWS,
-                                                                          surfaceData.clearCoatMask, specularHighlightsOff);
-        }
-    LIGHT_LOOP_END
+    #if defined(_ADDITIONAL_LIGHTS)
+    // (Legacy URP HLSL block — kept as dead code reference; runtime path above replaces it.)
     #endif
 
     #if defined(_ADDITIONAL_LIGHTS_VERTEX)

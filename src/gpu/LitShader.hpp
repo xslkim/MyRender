@@ -65,9 +65,13 @@ namespace gpu
         inputData.normalWS = TransformTangentToWorld(normalTS, tangentToWorld);
         inputData.normalWS = NormalizeNormalPerPixel(inputData.normalWS);
         inputData.viewDirectionWS = viewDirWS;
-        // No baked lightmaps / SH probe in this port; use a flat scene ambient as
-        // the indirect-diffuse fill so daylight scenes aren't pure black (design §11).
-        inputData.bakedGI = _AmbientColor;
+        // Baked lightmap overrides SH/flat ambient when the object has one.
+        if (_LIGHTMAP && _Lightmap != nullptr)
+            inputData.bakedGI = half3(SAMPLE_TEXTURE2D(_Lightmap, sampler_Lightmap, input.lightmapUV).rgb);
+        else
+            inputData.bakedGI = _SH9_VALID
+                ? EvaluateAmbientProbe(half3(inputData.normalWS))
+                : _AmbientColor;
         inputData.normalizedScreenSpaceUV = GetNormalizedScreenSpaceUV(input.positionCS);
 
         // Shadow coordinate: project world position into light clip space per-pixel.
@@ -101,8 +105,8 @@ namespace gpu
         half4 tangentWS = half4(normalInput.tangentWS.xyz, sign);
         output.tangentWS = tangentWS;
 
-        //暂不考虑，烘焙光照贴图
-        //OUTPUT_LIGHTMAP_UV(input.staticLightmapUV, unity_LightmapST, output.staticLightmapUV);
+        // Lightmap UV: UV2 scaled/offset by per-object lightmapScaleOffset.
+        output.lightmapUV = input.staticLightmapUV * _LightmapST.xy + _LightmapST.zw;
         output.positionWS = vertexInput.positionWS;
 
         output.fogFactor = fogFactor;
@@ -134,6 +138,7 @@ namespace gpu
 
         half4 color = UniversalFragmentPBR(inputData, surfaceData);
         color.rgb = MixFog(color.rgb, inputData.fogCoord);
+        color.rgb *= _BakedGIColor;  // per-material baked lightmap scale (default 1)
         color.a = OutputAlpha(color.a, IsSurfaceTypeTransparent(_Surface));
 
         return color;

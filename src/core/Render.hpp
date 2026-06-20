@@ -82,12 +82,14 @@ public:
 
         if (cam.backgroundColor != _defaultColor) {
             _defaultColor = cam.backgroundColor;
-            for (int i = 0; i < Config::kScreenWidth * Config::kScreenHeight; ++i) {
-                int k = i * 4;
-                _defaultColorBuf[k + 0] = _defaultColor.r;
-                _defaultColorBuf[k + 1] = _defaultColor.g;
-                _defaultColorBuf[k + 2] = _defaultColor.b;
-                _defaultColorBuf[k + 3] = _defaultColor.w;
+            if (_defaultColorBuf) {
+                for (int i = 0; i < Config::kScreenWidth * Config::kScreenHeight; ++i) {
+                    int k = i * 4;
+                    _defaultColorBuf[k + 0] = _defaultColor.r;
+                    _defaultColorBuf[k + 1] = _defaultColor.g;
+                    _defaultColorBuf[k + 2] = _defaultColor.b;
+                    _defaultColorBuf[k + 3] = _defaultColor.w;
+                }
             }
         }
     }
@@ -104,14 +106,66 @@ public:
         gpu::_AmbientColor = half3(color.x, color.y, color.z);
     }
 
+    void SetAdditionalLights(const std::vector<AdditionalLight>& lights)
+    {
+        using std::cos; using std::sqrt;
+        constexpr float kDegToRad = 3.14159265f / 180.0f;
+        int n = (int)std::min(lights.size(), (size_t)gpu::MAX_ADDITIONAL_LIGHTS);
+        gpu::_AdditionalLightsCount = n;
+        for (int i = 0; i < n; ++i) {
+            const AdditionalLight& l = lights[i];
+            // Position XYZ + 1/range^2 in W
+            float invRangeSq = 1.0f / (l.range * l.range + 1e-6f);
+            gpu::_AdditionalLightsPosition[i] = float4(l.position.x, l.position.y, l.position.z, invRangeSq);
+            gpu::_AdditionalLightsColor[i]    = half4(l.color.x, l.color.y, l.color.z, 0);
+
+            if (l.isSpot) {
+                float cosOuter = cos(l.spotAngleOuter * 0.5f * kDegToRad);
+                float cosInner = cos(l.spotAngleInner * 0.5f * kDegToRad);
+                float ramp = 1.0f / std::max(cosInner - cosOuter, 1e-4f);
+                gpu::_AdditionalLightsSpotDir[i]    = half4(l.direction.x, l.direction.y, l.direction.z, (half)cosOuter);
+                gpu::_AdditionalLightsAttenuation[i] = float4(ramp, 0, 0, 0);
+            } else {
+                // Point light: cosOuter=0 (no cone), spotAtten always 1
+                gpu::_AdditionalLightsSpotDir[i]    = half4(0, 0, 0, (half)1.0f);
+                gpu::_AdditionalLightsAttenuation[i] = float4(0, 0, 0, 0);
+            }
+        }
+    }
+
+    void SetSH(const float sh[27])
+    {
+        std::copy(sh, sh + 27, gpu::_SH9);
+        gpu::_SH9_VALID = true;
+        // _GlossyEnvironmentColor: L0 average (SH basis Y0 = 0.282095, times pi for irradiance).
+        // Used as fallback when cubemap probe is unavailable.
+        constexpr float kY0 = 0.282095f;
+        float r = sh[0 * 9] * kY0;
+        float g = sh[1 * 9] * kY0;
+        float b = sh[2 * 9] * kY0;
+        gpu::_GlossyEnvironmentColor = half4(r > 0 ? r : 0, g > 0 ? g : 0, b > 0 ? b : 0, 1);
+    }
+
+    void ClearSH()
+    {
+        gpu::_SH9_VALID = false;
+        gpu::_GlossyEnvironmentColor = half4(0, 0, 0, 1);
+    }
+
     void SetModelMatrices(const float4x4& localToWorld, const float4x4& worldToLocal)
     {
         gpu::UNITY_MATRIX_M   = localToWorld;
         gpu::UNITY_MATRIX_I_M = worldToLocal;
     }
 
-    // +1 = legacy OBJ winding (x-mirrored, reversed). -1 = verbatim Unity winding.
-    void SetFrontFaceSign(float sign) { _frontFaceSign = sign; }
+    void SetLightmap(Texture2D* tex, const float4& st, bool enabled)
+    {
+        gpu::_Lightmap   = tex;
+        gpu::_LightmapST = st;
+        gpu::_LIGHTMAP   = enabled;
+    }
+
+    void SetFrontFaceSign(float) {} // no-op: culling now uses world-space normals
 
     // -------------------------------------------------------------------------
     // Shadow depth pass — call before BeginFrame, writes to a separate buffer.
@@ -124,12 +178,34 @@ public:
         if (!_shadowDepth)
             _shadowDepth = new float[gpu::kShadowRes * gpu::kShadowRes];
         std::fill(_shadowDepth, _shadowDepth + gpu::kShadowRes * gpu::kShadowRes, 1.0f);
-        gpu::_ShadowDepth = _shadowDepth;
+        _activeShadowDepth = _shadowDepth;
+        gpu::_ShadowDepth  = _shadowDepth;
+    }
+
+    void BeginSpotShadowPass()
+    {
+        if (!_spotShadowDepth)
+            _spotShadowDepth = new float[gpu::kShadowRes * gpu::kShadowRes];
+        std::fill(_spotShadowDepth, _spotShadowDepth + gpu::kShadowRes * gpu::kShadowRes, 1.0f);
+        _activeShadowDepth        = _spotShadowDepth;
+        gpu::_SpotShadowDepth     = _spotShadowDepth;
     }
 
     void DrawDepthOnly(const Mesh& mesh, const Mesh::SubMesh& sub, const float4x4& localToWorld)
     {
         float4x4 mvp = gpu::_LightVP * localToWorld;
+        _shadowPendingTris.clear();
+        int end = sub.start + sub.count;
+        for (int i = sub.start; i < end; ++i)
+            CollectShadowTriangle(mesh.triangles[i], mvp);
+        for (const auto& tri : _shadowPendingTris)
+            RasterizeShadowTri(tri[0], tri[1], tri[2]);
+    }
+
+    // Spot light shadow caster: project with gpu::_SpotLightVP.
+    void DrawDepthOnlySpot(const Mesh& mesh, const Mesh::SubMesh& sub, const float4x4& localToWorld)
+    {
+        float4x4 mvp = gpu::_SpotLightVP * localToWorld;
         _shadowPendingTris.clear();
         int end = sub.start + sub.count;
         for (int i = sub.start; i < end; ++i)
@@ -188,6 +264,8 @@ public:
         ColorBuffer[i + 3] = color.a;
     }
 
+    float* GetColorBuffer() { return ColorBuffer; }
+
     // -------------------------------------------------------------------------
     // Draw call — two-pass: vertex/clip (single-threaded) then rasterize (parallel)
     //
@@ -201,6 +279,7 @@ public:
     // model matrices are uploaded once per object via SetModelMatrices.
     void Draw(const Mesh& mesh, const Mesh::SubMesh& sub, const Material& mat)
     {
+        gpu::_BakedGIColor = half3(1, 1, 1); // reset before each draw; material overrides if needed
         mat.UpdateGpuParameter();
 
         // The Attributes/Varyings pool is per-Draw scratch: Pass 1 copies finished
@@ -298,8 +377,6 @@ private:
     // -------------------------------------------------------------------------
     unsigned _numThreads = 1;
 
-    // Winding convention for front-face test (see IsFrontFace / SetFrontFaceSign).
-    float _frontFaceSign = 1.0f;
 
     // Screen-space triangles collected during the single-threaded vertex pass.
     // Stored as value types so threads can safely read them in parallel.
@@ -307,7 +384,9 @@ private:
     std::vector<ScreenTri> _pendingTris;
 
     // Shadow map resources
-    float* _shadowDepth = nullptr;
+    float* _shadowDepth      = nullptr;
+    float* _spotShadowDepth  = nullptr;
+    float* _activeShadowDepth = nullptr; // which buffer RasterizeShadowTri writes to
     using ShadowTri = std::array<float4, 3>;
     std::vector<ShadowTri> _shadowPendingTris;
 
@@ -315,12 +394,19 @@ private:
     // Geometry helpers
     // -------------------------------------------------------------------------
 
-    // Front-face test in screen space. The sign depends on the data's winding
-    // convention: the legacy OBJ path (x-mirror + winding reversal) wants one
-    // sign, verbatim Unity data the other. Scene picks via SetFrontFaceSign.
-    bool IsFrontFace(float3 v0, float3 v1, float3 v2)
+    // Front-face test using world-space normals. dot(avgNormalWS, camDir) > 0
+    // means the face points toward the camera — true regardless of the object's
+    // rotation, reflection, or the handedness of the VP transform.
+    bool IsFrontFaceWS(const Varyings& a, const Varyings& b, const Varyings& c)
     {
-        return vector_cross(v1 - v0, v2 - v0).z * _frontFaceSign < 0;
+        float3 n(a.normalWS.x + b.normalWS.x + c.normalWS.x,
+                 a.normalWS.y + b.normalWS.y + c.normalWS.y,
+                 a.normalWS.z + b.normalWS.z + c.normalWS.z);
+        float3 p = (a.positionWS + b.positionWS + c.positionWS) * (1.0f / 3.0f);
+        float3 d(gpu::_WorldSpaceCameraPos.x - p.x,
+                 gpu::_WorldSpaceCameraPos.y - p.y,
+                 gpu::_WorldSpaceCameraPos.z - p.z);
+        return (n.x*d.x + n.y*d.y + n.z*d.z) > 0.0f;
     }
 
     void InterpolateVaryings(const Varyings& v0, const Varyings& v1, const Varyings& v2,
@@ -437,7 +523,7 @@ private:
                     b.y < RenderUtils::NegativeInfinity ||
                     b.z < RenderUtils::NegativeInfinity) continue;
                 float depth = b.x * s0.z + b.y * s1.z + b.z * s2.z;
-                float& stored = _shadowDepth[y * gpu::kShadowRes + x];
+                float& stored = _activeShadowDepth[y * gpu::kShadowRes + x];
                 if (depth < stored) stored = depth;
             }
         }
@@ -493,9 +579,7 @@ private:
         float4 s1 = RenderUtils::ClipPositionToScreenPosition(v1.positionCS, ndc1);
         float4 s2 = RenderUtils::ClipPositionToScreenPosition(v2.positionCS, ndc2);
 
-        // Cull per material. Front-face winding sign for verbatim Unity data is
-        // resolved empirically at M1 (T1.5); IsFrontFace defines "front".
-        bool front = IsFrontFace(ndc0, ndc1, ndc2);
+        bool front = IsFrontFaceWS(v0, v1, v2);
         switch (mat.cull) {
             case Material::Cull::Back:  if (!front) return; break;
             case Material::Cull::Front: if ( front) return; break;

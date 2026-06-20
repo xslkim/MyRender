@@ -102,10 +102,12 @@ private:
             Vec4f tan(tx, ty, tz, tw);
             float uu = f32(), vv = f32();
             Vec2f uv0(uu, vv);
-            if (hasUV1)   { f32(); f32(); }
+            Vec2f uv1(0.0f, 0.0f);
+            if (hasUV1)   { float u1 = f32(), v1 = f32(); uv1 = Vec2f(u1, v1); }
             if (hasColor) { f32(); f32(); f32(); f32(); }
             Vertex v(pos, uv0, nrm);
             v.tangent = tan;
+            v.uv2     = uv1;
             if (hasSkin) {
                 v.boneIndex[0] = u16(); v.boneIndex[1] = u16();
                 v.boneIndex[2] = u16(); v.boneIndex[3] = u16();

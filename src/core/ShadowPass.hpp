@@ -156,4 +156,59 @@ inline void Render(const SceneModel& model)
     }
 }
 
+// Build perspective view-projection for the spot light and write gpu::_SpotLightVP.
+inline void ComputeSpotLightVP(const AdditionalLight& spot)
+{
+    float3 pos = spot.position;
+    float3 dir = vector_normalize(spot.direction);
+
+    float3 worldUp = (std::abs(dir.y) < 0.99f) ? float3(0, 1, 0) : float3(0, 0, 1);
+    float3 right   = vector_normalize(vector_cross(worldUp, dir));
+    float3 up      = vector_cross(dir, right);
+
+    float4x4 spotView = createMatrix4x4<float>(
+         right.x, right.y, right.z, -dot(right, pos),
+         up.x,    up.y,    up.z,    -dot(up,    pos),
+        -dir.x,  -dir.y,  -dir.z,   dot(dir,   pos),
+         0.0f,    0.0f,    0.0f,    1.0f);
+
+    // Perspective: FOV = outer cone angle (full, not half), aspect = 1, right-handed.
+    constexpr float kDegToRad = 3.14159265f / 180.0f;
+    float fovY  = spot.spotAngleOuter * kDegToRad;
+    float nearZ = 0.1f;
+    float farZ  = spot.range;
+    float f     = 1.0f / std::tan(fovY * 0.5f);
+    float4x4 spotProj = createMatrix4x4<float>(
+        f,    0.0f, 0.0f,                              0.0f,
+        0.0f, f,    0.0f,                              0.0f,
+        0.0f, 0.0f, -(farZ + nearZ) / (farZ - nearZ), -2.0f * farZ * nearZ / (farZ - nearZ),
+        0.0f, 0.0f, -1.0f,                             0.0f);
+
+    gpu::_SpotLightVP = spotProj * spotView;
+}
+
+// Run the spot shadow depth pass for the first spot light in the scene.
+inline void RenderSpot(const SceneModel& model)
+{
+    const AdditionalLight* spot = nullptr;
+    for (const auto& al : model.additionalLights)
+        if (al.isSpot) { spot = &al; break; }
+
+    if (!spot) {
+        gpu::_SPOT_SHADOWS_ENABLED = false;
+        return;
+    }
+
+    ComputeSpotLightVP(*spot);
+    ::Render::Get().BeginSpotShadowPass();
+
+    for (const auto& obj : model.objects) {
+        if (!obj.mesh || obj.skinned) continue;
+        for (const auto& sub : obj.mesh->submeshes)
+            ::Render::Get().DrawDepthOnlySpot(*obj.mesh, sub, obj.localToWorld);
+    }
+
+    gpu::_SPOT_SHADOWS_ENABLED = true;
+}
+
 } // namespace ShadowPass

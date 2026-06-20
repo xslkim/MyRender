@@ -1,9 +1,10 @@
 #pragma once
 #include "Vector.hpp"
 
-struct Varyings 
+struct Varyings
 {
     float2 uv; // : TEXCOORD0;
+    float2 lightmapUV; // : TEXCOORD6;   // baked lightmap UV
     float3 positionWS; // : TEXCOORD1;    // xyz: posWS
     float3 positionOS;
     float4 positionCS;// : SV_POSITION;

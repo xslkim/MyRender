@@ -70,6 +70,21 @@ struct MaterialAsset {
 
     float3      emissionColor = float3(0, 0, 0);
     std::string emissionMap;            // sRGB
+
+    // Per-material baked lightmap scale: approximates missing baked GI / AO.
+    // Multiplied onto the final fragment color. Default (1,1,1) = no change.
+    float3 bakedGIColor = float3(1, 1, 1);
+};
+
+struct AdditionalLightAsset {
+    std::string type      = "point";  // "point" | "spot"
+    float3      position  = {};
+    float3      color     = { 1, 1, 1 };
+    float       intensity = 1.0f;
+    float       range     = 10.0f;
+    float3      direction = { 0, -1, 0 };
+    float       spotAngleOuter = 0.0f;
+    float       spotAngleInner = 0.0f;
 };
 
 struct CameraAsset {
@@ -99,15 +114,49 @@ struct ObjectAsset {
     float4x4                 worldToLocal;  //            -> UNITY_MATRIX_I_M
     bool                     skinned = false;
     std::string              anim;      // relative path to .anim (only if skinned)
+    int                      lightmapIndex       = -1;               // -1 = not lightmapped
+    float4                   lightmapScaleOffset = float4(1,1,0,0);  // UV2 → lightmap atlas
+};
+
+// Post-processing Volume settings (C1). Optional: older exports default to no-op.
+struct PostProcessingAsset {
+    std::string tonemapping  = "none";   // none | aces | neutral
+    float       postExposure = 0.0f;     // EV100 (ColorAdjustments.postExposure)
+    float       contrast     = 0.0f;     // -100..100 (ColorAdjustments.contrast)
+    float       saturation   = 0.0f;     // -100..100 (ColorAdjustments.saturation)
+    bool        bloomEnabled = false;
+    float       bloomThreshold = 1.0f;
+    float       bloomIntensity = 0.0f;
+};
+
+// Sky gradient for background rendering (A1) and SH for ambient (A2).
+// Optional: older scene.json without "environment" leaves these at defaults.
+struct SkyEnvironmentAsset {
+    std::string ambientMode  = "color";           // color | skybox | trilight
+    float3      skyColor     = float3(0, 0, 0);   // ambient irradiance (for lighting)
+    float3      equatorColor = float3(0, 0, 0);
+    float3      groundColor  = float3(0, 0, 0);
+    // Visual skybox colors for background rendering (much brighter than irradiance)
+    float3      skyboxVisualTop = float3(0.5f, 0.5f, 0.5f);
+    float3      skyboxVisualMid = float3(0.4f, 0.4f, 0.4f);
+    float3      skyboxVisualBot = float3(0.1f, 0.1f, 0.1f);
+    float       skyboxExposure  = 1.0f;
+    float       sh[27]       = {};                // L2 SH9, channel-major (R*9, G*9, B*9)
+    bool        shValid      = false;             // true when sh[] was exported
+    bool        valid        = false;             // false → fall back to backgroundColor
 };
 
 struct SceneAsset {
-    std::string              name;
-    CameraAsset              camera;
-    LightAsset               light;
-    float3                   ambientColor     = float3(0, 0, 0);
-    float                    ambientIntensity = 1.0f;
-    std::vector<ObjectAsset> objects;
+    std::string                       name;
+    CameraAsset                       camera;
+    LightAsset                        light;
+    float3                            ambientColor     = float3(0, 0, 0);
+    float                             ambientIntensity = 1.0f;
+    SkyEnvironmentAsset               sky;
+    PostProcessingAsset               postProcessing;
+    std::vector<AdditionalLightAsset> additionalLights;
+    std::vector<ObjectAsset>          objects;
+    std::vector<std::string>          lightmapPaths;   // baked lightmap TGA paths (relative)
 };
 
 // ---------- deserialization (ADL-found via the asset:: types) ----------
@@ -140,6 +189,7 @@ inline void from_json(const json& j, MaterialAsset& m)
 
     if (j.contains("emissionColor")) m.emissionColor = ReadVec3(j["emissionColor"]);
     m.emissionMap = j.value("emissionMap", "");
+    if (j.contains("bakedGIColor")) m.bakedGIColor = ReadVec3(j["bakedGIColor"]);
 }
 
 inline void from_json(const json& j, CameraAsset& c)
@@ -177,6 +227,48 @@ inline void from_json(const json& j, ObjectAsset& o)
     o.worldToLocal = ReadMat4(j.at("worldToLocal"));
     o.skinned      = j.value("skinned", false);
     o.anim         = j.value("anim", "");
+    o.lightmapIndex = j.value("lightmapIndex", -1);
+    if (j.contains("lightmapScaleOffset")) o.lightmapScaleOffset = ReadVec4(j["lightmapScaleOffset"]);
+}
+
+inline void from_json(const json& j, PostProcessingAsset& p)
+{
+    p.tonemapping   = j.value("tonemapping",    "none");
+    p.postExposure  = j.value("postExposure",   0.0f);
+    p.contrast      = j.value("contrast",       0.0f);
+    p.saturation    = j.value("saturation",     0.0f);
+    p.bloomEnabled  = j.value("bloomEnabled",   false);
+    p.bloomThreshold = j.value("bloomThreshold", 1.0f);
+    p.bloomIntensity = j.value("bloomIntensity", 0.0f);
+}
+
+inline void from_json(const json& j, SkyEnvironmentAsset& e)
+{
+    e.ambientMode  = j.value("ambientMode", "color");
+    if (j.contains("skyColor"))     e.skyColor     = ReadVec3(j["skyColor"]);
+    if (j.contains("equatorColor")) e.equatorColor = ReadVec3(j["equatorColor"]);
+    if (j.contains("skyboxVisualTop")) e.skyboxVisualTop = ReadVec3(j["skyboxVisualTop"]);
+    if (j.contains("skyboxVisualMid")) e.skyboxVisualMid = ReadVec3(j["skyboxVisualMid"]);
+    if (j.contains("skyboxVisualBot")) e.skyboxVisualBot = ReadVec3(j["skyboxVisualBot"]);
+    e.skyboxExposure = j.value("skyboxExposure", 1.0f);
+    if (j.contains("groundColor"))  e.groundColor  = ReadVec3(j["groundColor"]);
+    if (j.contains("sh") && j["sh"].is_array() && j["sh"].size() == 27) {
+        for (int i = 0; i < 27; ++i) e.sh[i] = j["sh"][i].get<float>();
+        e.shValid = true;
+    }
+    e.valid = true;
+}
+
+inline void from_json(const json& j, AdditionalLightAsset& a)
+{
+    a.type           = j.value("type", "point");
+    if (j.contains("position"))  a.position  = ReadVec3(j["position"]);
+    if (j.contains("color"))     a.color     = ReadVec3(j["color"]);
+    a.intensity      = j.value("intensity", 1.0f);
+    a.range          = j.value("range", 10.0f);
+    if (j.contains("direction")) a.direction = ReadVec3(j["direction"]);
+    a.spotAngleOuter = j.value("spotAngleOuter", 0.0f);
+    a.spotAngleInner = j.value("spotAngleInner", 0.0f);
 }
 
 inline void from_json(const json& j, SceneAsset& s)
@@ -188,11 +280,20 @@ inline void from_json(const json& j, SceneAsset& s)
         if (j["ambient"].contains("color"))     s.ambientColor     = ReadVec3(j["ambient"]["color"]);
         if (j["ambient"].contains("intensity")) s.ambientIntensity = j["ambient"]["intensity"];
     }
+    if (j.contains("environment"))    j["environment"].get_to(s.sky);
+    if (j.contains("postProcessing")) j["postProcessing"].get_to(s.postProcessing);
+    if (j.contains("additionalLights")) {
+        for (const auto& jl : j["additionalLights"]) {
+            AdditionalLightAsset al; jl.get_to(al); s.additionalLights.push_back(al);
+        }
+    }
     for (const auto& jo : j.at("objects")) {
         ObjectAsset o;
         jo.get_to(o);
         s.objects.push_back(o);
     }
+    if (j.contains("lightmaps"))
+        for (const auto& lp : j["lightmaps"]) s.lightmapPaths.push_back(lp.get<std::string>());
 }
 
 } // namespace asset

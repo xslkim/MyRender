@@ -554,6 +554,87 @@ namespace gpu
         return (lightLayers & renderingLayers) != 0;
     }
 
+    // ---- Spot light shadow (single spot, index 0) ----
+    inline half SpotRealtimeShadow(float4 shadowCoord)
+    {
+        if (!_SPOT_SHADOWS_ENABLED || _SpotShadowDepth == nullptr) return half(1.0f);
+        if (shadowCoord.w <= 0.0f) return half(1.0f);
+
+        float invW = 1.0f / shadowCoord.w;
+        float nx = shadowCoord.x * invW;
+        float ny = shadowCoord.y * invW;
+        float nz = shadowCoord.z * invW;
+
+        // Outside frustum → unaffected (treat as lit)
+        if (nx < -1.0f || nx > 1.0f || ny < -1.0f || ny > 1.0f || nz < -1.0f || nz > 1.0f)
+            return half(1.0f);
+
+        float u = nx * 0.5f + 0.5f;
+        float v = ny * 0.5f + 0.5f;
+        float receiverDepth = nz * 0.5f + 0.5f - _SpotShadowBias;
+
+        // 3×3 PCF
+        float shadow = 0.0f;
+        for (int dy = -1; dy <= 1; ++dy) {
+            for (int dx = -1; dx <= 1; ++dx) {
+                int sx = std::max(0, std::min(kShadowRes - 1, (int)(u * (kShadowRes - 1)) + dx));
+                int sy = std::max(0, std::min(kShadowRes - 1, (int)(v * (kShadowRes - 1)) + dy));
+                float mapDepth = _SpotShadowDepth[sy * kShadowRes + sx];
+                shadow += (receiverDepth < mapDepth) ? 1.0f : 0.0f;
+            }
+        }
+        return half(shadow / 9.0f);
+    }
+
+    // ---- Additional lights (D1) ----
+    // Mirrors URP GetAdditionalPerObjectLight logic:
+    //   _AdditionalLightsPosition.w  = 1/range^2 (0 = directional / unused)
+    //   _AdditionalLightsSpotDir.w   = cos(halfOuterAngle) (0 for point lights)
+    //   _AdditionalLightsAttenuation.x = 1/(cos(inner)-cos(outer)) falloff ramp
+    inline int GetAdditionalLightsCount() { return _AdditionalLightsCount; }
+
+    inline Light GetAdditionalLight(int index, float3 positionWS)
+    {
+        float4 lightPos    = _AdditionalLightsPosition  [index];
+        half4  lightCol    = _AdditionalLightsColor      [index];
+        half4  lightSpot   = _AdditionalLightsSpotDir    [index];
+        float4 lightAtten  = _AdditionalLightsAttenuation[index];
+
+        float3 toLight  = lightPos.xyz - positionWS;
+        float  distSq   = dot(toLight, toLight);
+        float  dist     = std::sqrt(distSq + 1e-7f);
+        float3 L        = toLight / dist;
+
+        // Distance attenuation: smooth saturate((1 - (d/range)^2)^2) / (d^2+1)
+        // lightPos.w = 1/range^2
+        float invRangeSq = lightPos.w;
+        float distAtten  = std::max(0.0f, 1.0f - distSq * invRangeSq);
+        distAtten        = distAtten * distAtten / (distSq + 1.0f);
+
+        // Spot angle attenuation:
+        // lightSpot.xyz = direction, .w = cos(halfOuter)
+        // lightAtten.x  = 1/(cos(halfInner)-cos(halfOuter))  (0 for point lights)
+        float spotAtten = 1.0f;
+        if (lightSpot.w < 0.99f)  // has spot cone (cos(halfOuter)<1 → nonzero cone)
+        {
+            float cosAngle = dot((float3)lightSpot.xyz, -L);
+            float t = std::max(0.0f, cosAngle - lightSpot.w);
+            spotAtten = std::min(1.0f, t * lightAtten.x);
+            spotAtten = spotAtten * spotAtten;
+        }
+
+        Light light;
+        light.direction           = (half3)L;
+        light.color               = (half3)(lightCol.xyz * distAtten * spotAtten);
+        light.distanceAttenuation = 1.0f;
+        // Spot shadow: sample the perspective shadow map for index-0 spot lights.
+        light.shadowAttenuation = (index == 0 && lightSpot.w < 0.99f)
+            ? SpotRealtimeShadow(_SpotLightVP * float4(positionWS.x, positionWS.y, positionWS.z, 1.0f))
+            : half(1.0f);
+        light.layerMask           = 0xFF;
+        return light;
+    }
+
 
     float3 MixFogColor(float3 fragColor, float3 fogColor, float fogFactor)
     {

@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include <fstream>
 #include <memory>
 #include "SceneAsset.hpp"
@@ -36,6 +36,58 @@ public:
 
         model.ambientColor     = a.ambientColor;
         model.ambientIntensity = a.ambientIntensity;
+
+        if (a.sky.valid) {
+            model.sky.skyColor     = a.sky.skyColor;
+            model.sky.equatorColor = a.sky.equatorColor;
+            model.sky.groundColor  = a.sky.groundColor;
+
+            // Camera::RenderToCubemap outputs sRGB-encoded pixels (even for float cubemaps
+            // in a Linear project), so convert sRGB → linear before handing off to
+            // SkyboxPass, which works in linear light and feeds into ACES + sRGB output.
+            auto srgbToLinear = [](float v) -> float {
+                if (v <= 0.04045f) return v / 12.92f;
+                return std::pow((v + 0.055f) / 1.055f, 2.4f);
+            };
+            auto lin3 = [&](float3 c) -> float3 {
+                return float3(srgbToLinear(c.x), srgbToLinear(c.y), srgbToLinear(c.z));
+            };
+            model.sky.skyboxVisualTop = lin3(a.sky.skyboxVisualTop);
+            model.sky.skyboxVisualMid = lin3(a.sky.skyboxVisualMid);
+            model.sky.skyboxVisualBot = lin3(a.sky.skyboxVisualBot);
+            model.sky.skyboxExposure  = a.sky.skyboxExposure;
+            model.sky.valid        = true;
+            if (a.sky.shValid) {
+                std::copy(std::begin(a.sky.sh), std::end(a.sky.sh), std::begin(model.sky.sh));
+                model.sky.shValid = true;
+            }
+        }
+
+        model.postProcessing.tonemapping   = a.postProcessing.tonemapping;
+        model.postProcessing.postExposure  = a.postProcessing.postExposure;
+        model.postProcessing.contrast      = a.postProcessing.contrast;
+        model.postProcessing.saturation    = a.postProcessing.saturation;
+        model.postProcessing.bloomEnabled  = a.postProcessing.bloomEnabled;
+        model.postProcessing.bloomThreshold = a.postProcessing.bloomThreshold;
+        model.postProcessing.bloomIntensity = a.postProcessing.bloomIntensity;
+
+        for (const auto& al : a.additionalLights) {
+            AdditionalLight l;
+            l.isSpot    = (al.type == "spot");
+            l.position  = al.position;
+            l.color     = al.color * al.intensity;   // pre-multiply
+            l.range     = al.range;
+            l.direction = al.direction;
+            l.spotAngleOuter = al.spotAngleOuter;
+            l.spotAngleInner = al.spotAngleInner;
+            model.additionalLights.push_back(l);
+        }
+
+        // Pre-load all lightmap textures (linear, no sRGB decode).
+        std::vector<Texture2D*> lightmaps;
+        for (const auto& lp : a.lightmapPaths)
+            lightmaps.push_back(lp.empty() ? nullptr
+                : TextureCache::Get().GetTexture(Config::scene_path + lp, /*linear=*/true));
 
         for (const auto& o : a.objects) {
             RenderObject ro;

@@ -91,7 +91,9 @@ namespace gpu
         viewDirWS = SafeNormalize(viewDirWS);
 
         inputData.viewDirectionWS = viewDirWS;
-
+        inputData.bakedGI = _SH9_VALID
+            ? EvaluateAmbientProbe(half3(inputData.normalWS))
+            : _AmbientColor;
         inputData.normalizedScreenSpaceUV = GetNormalizedScreenSpaceUV(input.positionCS);
     }
 

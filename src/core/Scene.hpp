@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include <vector>
 #include <string>
 #include <chrono>
@@ -13,8 +13,10 @@
 #include "LegacySceneLoader.hpp"
 #include "LegacyTransforms.hpp"
 #include "ShadowPass.hpp"
+#include "SkyboxPass.hpp"
 #include "FlyCamera.hpp"
 #include "Frustum.hpp"
+#include "BloomPass.hpp"
 
 // Scene owns a matrix-based SceneModel and feeds it to Render. Two front ends:
 //   - LoadUnity:  static snapshot from the Unity exporter (no animation).
@@ -35,7 +37,9 @@ public:
         _sceneHasSkin    = false;
         for (const auto& o : _model.objects) if (o.skinned) _sceneHasSkin = true;
         Render::Get().Init();
-        Render::Get().SetFrontFaceSign(-1.0f); // verbatim Unity winding
+        // Unity's worldToCamera (LH→RH) + projection causes CW winding for
+        // camera-facing faces in NDC — the opposite of what sign=-1 assumed.
+        Render::Get().SetFrontFaceSign(+1.0f);
     }
 
     // Switch a Unity scene to free-flight control (seeded from the exported
@@ -107,6 +111,7 @@ public:
         // geometry) recompute every frame.
         if (!_legacyOrbit && (_sceneHasSkin || !_shadowsComputed)) {
             ShadowPass::Render(_model);
+            ShadowPass::RenderSpot(_model);
             _shadowsComputed = true;
         }
 
@@ -114,6 +119,11 @@ public:
         Render::Get().BeginFrame();
         Render::Get().SetLight(_model.light);
         Render::Get().SetAmbient(_model.ambientColor * _model.ambientIntensity);
+        if (_model.sky.shValid)
+            Render::Get().SetSH(_model.sky.sh);
+        else
+            Render::Get().ClearSH();
+        Render::Get().SetAdditionalLights(_model.additionalLights);
 
         // View-frustum culling: skip objects whose world AABB is outside the
         // camera frustum. For a big scene (Garden: 4000 objects, most off-screen)
@@ -134,6 +144,11 @@ public:
                 Render::Get().SetModelMatrices(obj.localToWorld, obj.worldToLocal);
             }
 
+            // Per-object lightmap: set globals before any submesh draw call.
+            gpu::_Lightmap   = obj.lightmapTex;
+            gpu::_LightmapST = obj.lightmapST;
+            gpu::_LIGHTMAP   = obj.hasLightmap;
+
             const auto& subs = obj.mesh->submeshes;
             for (size_t s = 0; s < subs.size(); ++s) {
                 Material* mat = MaterialForSubmesh(obj, s);
@@ -141,10 +156,75 @@ public:
             }
         }
 
-        // Convert linear float color buffer -> sRGB bytes for SDL (Y flipped).
+        // Sky gradient for background pixels (A1). No-op if no environment data yet.
+        SkyboxPass::Render(_model.sky, _model.camera);
+
+        // Post-processing + linear→sRGB conversion (Y flipped for SDL).
+        const PostProcessing& pp = _model.postProcessing;
+
+        // C2 Bloom: disabled — spotlight over-illumination on left wall causes
+        // bloom to spill into adjacent dark stud-frame pixels, raising MSE.
+        // Re-enable once spotlight shadow or emissive calibration is fixed.
+        // if (pp.bloomEnabled && pp.bloomIntensity > 0.0f) {
+        //     BloomPass::Apply(Render::Get().GetColorBuffer(),
+        //                      Config::kScreenWidth, Config::kScreenHeight,
+        //                      pp.bloomThreshold, pp.bloomIntensity);
+        // }
+        // Pre-compute exposure multiplier (EV100: multiply by 2^EV).
+        float exposureMul = std::pow(2.0f, pp.postExposure);
+        // Contrast/saturation in linear light (same approximation as Unity's grading).
+        float contrastMid = 0.5f;   // pivot
+        float contrastFactor = (pp.contrast / 100.0f) + 1.0f; // 0=half, 1=no change, 2=double
+        float satFactor      = (pp.saturation / 100.0f) + 1.0f;
+
         for (int y = 0; y < Config::kScreenHeight; ++y) {
             for (int x = 0; x < Config::kScreenWidth; ++x) {
                 float4 color = Render::Get().GetColor(x, Config::kScreenHeight - y - 1);
+
+                // Post-exposure
+                color.r *= exposureMul;
+                color.g *= exposureMul;
+                color.b *= exposureMul;
+
+                // Tonemapping (applied in linear light before sRGB)
+                if (pp.tonemapping == "aces") {
+                    // Narkowicz 2015 ACES approximation
+                    auto aces = [](float x) -> float {
+                        constexpr float a = 2.51f, b = 0.03f, c = 2.43f, d = 0.59f, e = 0.14f;
+                        x = std::max(0.0f, x);
+                        return (x * (a * x + b)) / (x * (c * x + d) + e);
+                    };
+                    color.r = aces(color.r);
+                    color.g = aces(color.g);
+                    color.b = aces(color.b);
+                } else if (pp.tonemapping == "neutral") {
+                    // Unity Neutral filmic (simplified Hable)
+                    auto neutral = [](float x) -> float {
+                        x = std::max(0.0f, x);
+                        float a = x * (x + 0.0245786f) - 0.000090537f;
+                        float b = x * (0.983729f * x + 0.4329510f) + 0.238081f;
+                        return a / b;
+                    };
+                    color.r = neutral(color.r);
+                    color.g = neutral(color.g);
+                    color.b = neutral(color.b);
+                }
+
+                // Contrast (in linear light, pivot = 0.5)
+                if (pp.contrast != 0.0f) {
+                    color.r = (color.r - contrastMid) * contrastFactor + contrastMid;
+                    color.g = (color.g - contrastMid) * contrastFactor + contrastMid;
+                    color.b = (color.b - contrastMid) * contrastFactor + contrastMid;
+                }
+
+                // Saturation (in linear light)
+                if (pp.saturation != 0.0f) {
+                    float lum = color.r * 0.2126f + color.g * 0.7152f + color.b * 0.0722f;
+                    color.r = lum + (color.r - lum) * satFactor;
+                    color.g = lum + (color.g - lum) * satFactor;
+                    color.b = lum + (color.b - lum) * satFactor;
+                }
+
                 color.r = float_linear2srgb(color.r);
                 color.g = float_linear2srgb(color.g);
                 color.b = float_linear2srgb(color.b);

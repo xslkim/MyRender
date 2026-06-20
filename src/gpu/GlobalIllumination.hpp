@@ -17,6 +17,54 @@ namespace gpu {
 #define _MIXED_LIGHTING_SUBTRACTIVE
 #endif
 
+// ---------------------------------------------------------------------------
+// L2 SH9 evaluation using raw SphericalHarmonicsL2 coefficients exported from
+// Unity (27 floats, channel-major: R*9, G*9, B*9).
+//
+// Basis functions (standard real SH, same ordering as Unity's probe storage):
+//   i=0  : Y_0^0  = 0.282095                    (L0, constant)
+//   i=1  : Y_1^-1 = 0.488603 * n.y              (L1)
+//   i=2  : Y_1^0  = 0.488603 * n.z              (L1)
+//   i=3  : Y_1^1  = 0.488603 * n.x              (L1)
+//   i=4  : Y_2^-2 = 1.092548 * n.x*n.y          (L2)
+//   i=5  : Y_2^-1 = 1.092548 * n.y*n.z          (L2)
+//   i=6  : Y_2^0  = 0.315392 * (3*n.z^2 - 1)   (L2)
+//   i=7  : Y_2^1  = 1.092548 * n.x*n.z          (L2)
+//   i=8  : Y_2^2  = 0.546274 * (n.x^2 - n.y^2) (L2)
+//
+// Unity's ambientProbe stores irradiance coefficients directly, so we evaluate
+// at the surface normal to get the per-pixel indirect diffuse colour.
+// ---------------------------------------------------------------------------
+    half3 EvaluateAmbientProbe(half3 normalWS)
+    {
+        float x = normalWS.x, y = normalWS.y, z = normalWS.z;
+
+        float b[9] = {
+            0.282095f,
+            0.488603f * y,
+            0.488603f * z,
+            0.488603f * x,
+            1.092548f * x * y,
+            1.092548f * y * z,
+            0.315392f * (3.f * z * z - 1.f),
+            1.092548f * x * z,
+            0.546274f * (x * x - y * y)
+        };
+
+        float r = 0, g = 0, bv = 0;
+        for (int i = 0; i < 9; ++i) {
+            r  += _SH9[0 * 9 + i] * b[i];
+            g  += _SH9[1 * 9 + i] * b[i];
+            bv += _SH9[2 * 9 + i] * b[i];
+        }
+
+        return half3(
+            r  > 0.f ? r  : 0.f,
+            g  > 0.f ? g  : 0.f,
+            bv > 0.f ? bv : 0.f
+        );
+    }
+
 // SH Vertex Evaluation. Depending on target SH sampling might be
 // done completely per vertex or mixed with L2 term per vertex and L0, L1
 // per pixel. See SampleSHPixel
@@ -33,7 +81,7 @@ namespace gpu {
         return half3(0.0, 0.0, 0.0);
     }
 
-    //todo ÔÝÊ±²»Ö§³Ö ÇòÐ­º¯Êý
+    //todo ï¿½ï¿½Ê±ï¿½ï¿½Ö§ï¿½ï¿½ ï¿½ï¿½Ð­ï¿½ï¿½ï¿½ï¿½
     // SH Pixel Evaluation. Depending on target SH sampling might be done
     // mixed or fully in pixel. See SampleSHVertex
 //    half3 SampleSHPixel(half3 L2Term, half3 normalWS)
@@ -344,13 +392,23 @@ real3 DecodeHDREnvironment(real4 encodedIrradiance, real4 decodeInstructions)
     return (decodeInstructions.x * PositivePow(alpha, decodeInstructions.y)) * encodedIrradiance.rgb;
 }
 
-//to ¶ÔÈ«¾Ö¹âÕÕ½øÐÐ²ÉÑù
-Texture2D* unity_SpecCube0;
+//to ï¿½ï¿½È«ï¿½Ö¹ï¿½ï¿½Õ½ï¿½ï¿½Ð²ï¿½ï¿½ï¿½
+// Cubemap probe (A3). Real cubemap sampling needs a full Texture3D/cubemap; until that
+// is implemented we approximate specular by evaluating the SH probe at the reflect
+// vector (works well for rough surfaces; smooth surfaces need a real cubemap).
+Texture2D* unity_SpecCube0 = nullptr;
 SamplerState samplerunity_SpecCube0;
-float4 unity_SpecCube0_HDR;
-half4 SAMPLE_TEXTURECUBE_LOD(Texture2D* cube_tex, SamplerState state, real3 reflect_vector, real mip)
+
+half4 SAMPLE_TEXTURECUBE_LOD(Texture2D* /*cube_tex*/, SamplerState /*state*/,
+                              real3 reflect_vector, real /*mip*/)
 {
-    return half4(0, 0, 0, 1);
+    if (!_SH9_VALID) return half4(0, 0, 0, 1);
+    // SH probe stores irradiance (cosine-weighted, includes pi factor).
+    // Cubemap specular expects radiance, so divide by pi to correct energy.
+    constexpr float kInvPi = 1.0f / 3.14159265f;
+    half3 c = EvaluateAmbientProbe(half3(reflect_vector.x, reflect_vector.y, reflect_vector.z));
+    c = c * kInvPi;
+    return half4(c.x, c.y, c.z, 1.0f);
 }
 
     half3 GlossyEnvironmentReflection(half3 reflectVector, float3 positionWS, half perceptualRoughness, half occlusion, float2 normalizedScreenSpaceUV)

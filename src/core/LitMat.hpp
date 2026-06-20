@@ -17,6 +17,7 @@ public:
     float      normalScale       = 1.0f;
     float      occlusionStrength = 1.0f;
     float3     emissionColor     = float3(0, 0, 0);
+    float3     bakedGIColor      = float3(1, 1, 1);
     bool       smoothnessFromAlbedo = false;
 
     void Load(const MaterialData& data) override
@@ -51,6 +52,7 @@ public:
         normalScale          = a.normalScale;
         occlusionStrength    = a.occlusionStrength;
         emissionColor        = a.emissionColor;
+        bakedGIColor         = a.bakedGIColor;
         smoothnessFromAlbedo = (a.smoothnessChannel == "albedoAlpha");
 
         cull = a.cull == "off"   ? Cull::Off
@@ -60,10 +62,11 @@ public:
 
     void InitAttributes(const Vertex& vertex, Attributes* attributes) const override
     {
-        attributes->positionOS = float4(vertex.position, 1);
-        attributes->texcoord   = vertex.texcoord;
-        attributes->normalOS   = vertex.normal;
-        attributes->tangentOS  = vertex.tangent;
+        attributes->positionOS       = float4(vertex.position, 1);
+        attributes->texcoord         = vertex.texcoord;
+        attributes->staticLightmapUV = vertex.uv2;
+        attributes->normalOS         = vertex.normal;
+        attributes->tangentOS        = vertex.tangent;
         for (int i = 0; i < 4; ++i) {
             attributes->boneIndex[i]  = vertex.boneIndex[i];
             attributes->boneWeight[i] = vertex.boneWeight[i];
@@ -94,6 +97,9 @@ public:
         gpu::_OcclusionMap      = occlusionMap;
         gpu::_OCCLUSIONMAP      = (occlusionMap != nullptr);
         gpu::_OcclusionStrength = occlusionStrength;
+
+        // Baked GI scale (per-material lightmap approximation)
+        gpu::_BakedGIColor = half3(bakedGIColor.x, bakedGIColor.y, bakedGIColor.z);
 
         // Emission (enabled if a map or a non-black color is present)
         bool hasEmission = (emissionMap != nullptr) ||

@@ -15,13 +15,13 @@ inline void test_mesh_binary()
     CHECK(cube.submeshes[0].count == 12);
 
     // Triangle 0 first vertex, read verbatim (no x-flip). This vertex sits on
-    // the +X face: position (0.5,-0.5,0.5), normal (1,0,0), tangent (-1,0,0,-1).
+    // the +Z face: position (0.5,-0.5,0.5), normal (0,0,1), tangent (-1,0,0,-1).
     const Vertex& v0 = cube.triangles[0][0];
     CHECK(equal(v0.position.x,  0.5f));
     CHECK(equal(v0.position.y, -0.5f));
     CHECK(equal(v0.position.z,  0.5f));
-    CHECK(equal(v0.normal.x,     1.0f));
-    CHECK(equal(v0.normal.z,     0.0f));
+    CHECK(equal(v0.normal.x,     0.0f));
+    CHECK(equal(v0.normal.z,     1.0f));
     CHECK(equal(v0.tangent.x,  -1.0f));
     CHECK(equal(v0.tangent.w,  -1.0f));
 

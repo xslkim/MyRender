@@ -155,37 +155,86 @@ static void runCapture(const std::string& outDir)
     printf("capture done -> %s\n", outDir.c_str());
 }
 
+// Box-downsample bigBuf (ssW x ssH, RGBA bytes) -> outBuf (W x H) by factor N=ss.
+static void boxDownsample(const unsigned char* bigBuf, int ssW, int ssH, int ss,
+                          unsigned char* outBuf, int W, int H)
+{
+    int n2 = ss * ss;
+    for (int y = 0; y < H; ++y) {
+        for (int x = 0; x < W; ++x) {
+            int r = 0, g = 0, b = 0, a = 0;
+            for (int dy = 0; dy < ss; ++dy) {
+                for (int dx = 0; dx < ss; ++dx) {
+                    int si = ((y * ss + dy) * ssW + (x * ss + dx)) * 4;
+                    r += bigBuf[si + 0];
+                    g += bigBuf[si + 1];
+                    b += bigBuf[si + 2];
+                    a += bigBuf[si + 3];
+                }
+            }
+            int di = (y * W + x) * 4;
+            outBuf[di + 0] = (unsigned char)(r / n2);
+            outBuf[di + 1] = (unsigned char)(g / n2);
+            outBuf[di + 2] = (unsigned char)(b / n2);
+            outBuf[di + 3] = (unsigned char)(a / n2);
+        }
+    }
+}
+
 // Headless one-shot of a Unity-exported scene -> single BMP. No window.
+// ssScale=1: no SSAA. ssScale=2: render at 2× in each dimension, box-downsample.
 static void runCaptureUnity(const std::string& sceneDir, const std::string& outFile,
-                            int debugView = gpu::DV_NONE, float animTime = 0.0f)
+                            int debugView = gpu::DV_NONE, float animTime = 0.0f,
+                            int ssScale = 1)
 {
     const int W = Config::kScreenWidth;
     const int H = Config::kScreenHeight;
-    unsigned char* buf = new unsigned char[W * H * 4];
+    const int ss = std::max(1, ssScale);
+    const int ssW = W * ss;
+    const int ssH = H * ss;
+
+    // Temporarily set render resolution to the supersample size.
+    Config::kScreenWidth  = ssW;
+    Config::kScreenHeight = ssH;
+
+    unsigned char* bigBuf = new unsigned char[ssW * ssH * 4];
 
     Config::scene_path = sceneDir;
     if (Config::scene_path.back() != '/' && Config::scene_path.back() != '\\')
         Config::scene_path += '/';
 
     Scene scene;
-    scene.ScreenBuffer = buf;
+    scene.ScreenBuffer = bigBuf;
 
     auto t0 = std::chrono::high_resolution_clock::now();
     scene.LoadUnity("scene.json");
     auto t1 = std::chrono::high_resolution_clock::now();
     gpu::g_debugView = debugView;
-    if (animTime > 0.0f) scene.AdvanceAnimations(animTime); // seek into the clip
+    if (animTime > 0.0f) scene.AdvanceAnimations(animTime);
     scene.Render();
     auto t2 = std::chrono::high_resolution_clock::now();
-    scene.Render(); // second frame = steady-state render cost (no load)
+    scene.Render(); // second frame = steady-state render cost
     auto t3 = std::chrono::high_resolution_clock::now();
 
     auto ms = [](auto a, auto b){ return std::chrono::duration_cast<std::chrono::milliseconds>(b-a).count(); };
-    printf("[bench] load=%lldms  render1=%lldms  render2=%lldms\n", ms(t0,t1), ms(t1,t2), ms(t2,t3));
+    printf("[bench] load=%lldms  render1=%lldms  render2=%lldms  ss=%dx\n",
+           ms(t0,t1), ms(t1,t2), ms(t2,t3), ss);
 
-    writeBMP(outFile, buf, W, H);
+    if (ss == 1) {
+        writeBMP(outFile, bigBuf, W, H);
+    } else {
+        unsigned char* outBuf = new unsigned char[W * H * 4];
+        boxDownsample(bigBuf, ssW, ssH, ss, outBuf, W, H);
+        writeBMP(outFile, outBuf, W, H);
+        delete[] outBuf;
+    }
+
+    // Restore resolution so later callers (interactive window) see the right config.
+    Config::kScreenWidth  = W;
+    Config::kScreenHeight = H;
+
     printf("unity capture -> %s\n", outFile.c_str());
-    delete[] buf;
+    delete[] bigBuf;
 }
 
 int main(int argc, char* argv[])
@@ -216,13 +265,14 @@ int main(int argc, char* argv[])
         return 0;
     }
 
-    // Headless Unity one-shot: MyRender.exe --capture-unity [sceneDir] [outFile]
+    // Headless Unity one-shot: MyRender.exe --capture-unity [sceneDir] [outFile] [dv] [animTime] [ssScale]
     if (argc > 1 && std::string(argv[1]) == "--capture-unity") {
         std::string dir = (argc > 2) ? argv[2] : "assets/unity_export/ValidationScene";
         std::string out = (argc > 3) ? argv[3] : "out_validation.bmp";
-        int dv = (argc > 4) ? atoi(argv[4]) : gpu::DV_NONE; // 1=albedo 2=normalGeom 3=normalMapped 4=uv
-        float at = (argc > 5) ? (float)atof(argv[5]) : 0.0f; // animation seek time (s)
-        runCaptureUnity(dir, out, dv, at);
+        int   dv = (argc > 4) ? atoi(argv[4]) : gpu::DV_NONE; // 1=albedo 2=normalGeom 3=normalMapped 4=uv
+        float at = (argc > 5) ? (float)atof(argv[5]) : 0.0f;   // animation seek time (s)
+        int   ss = (argc > 6) ? atoi(argv[6]) : 1;              // SSAA scale: 1=off, 2=2x
+        runCaptureUnity(dir, out, dv, at, ss);
         SDL_Quit();
         return 0;
     }
