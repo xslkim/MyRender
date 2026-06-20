@@ -34,6 +34,19 @@ public:
         return buffer[r * width + c];
     }
 
+    // Clamp-to-edge sampling. Unity lightmaps sample with CLAMP wrap (never
+    // repeat): a baked UV of 1.075 must snap to the atlas edge, not wrap to 0.075.
+    // Without this, geometry whose UV2 slightly exceeds [0,1] reads the wrong
+    // atlas texels and the AO pattern is destroyed.
+    float4 SamplerClamp(float x, float y) const
+    {
+        float u = x < 0.0f ? 0.0f : (x > 1.0f ? 1.0f : x);
+        float v = y < 0.0f ? 0.0f : (y > 1.0f ? 1.0f : y);
+        int   c = (int)((width  - 1) * u);
+        int   r = (int)((height - 1) * v);
+        return buffer[r * width + c];
+    }
+
     // Bilinear filtering with Repeat wrap. Samples the four texels around the
     // continuous coordinate and blends by the fractional position.
     float4 SamplerLinear(float x, float y) const

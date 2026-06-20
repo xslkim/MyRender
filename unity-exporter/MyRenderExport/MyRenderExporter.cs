@@ -79,13 +79,17 @@ namespace MyRenderExport
             }
 
             // Export baked lightmap textures (if any).
+            // Unity stores HDR lightmaps in RGBM encoding (rgb * alpha * ~8). The
+            // default ExportTexture path blits the raw encoded bytes, which would
+            // feed the shader under-decoded (far too bright) values. Use a dedicated
+            // path that reads via GetPixels() — which decodes RGBM → linear float —
+            // and writes the true linear radiance, clamped to [0,1] for RGBA32.
             var lightmapPaths = new List<string>();
             var lmData = LightmapSettings.lightmaps;
             for (int i = 0; i < lmData.Length; i++)
             {
                 Texture2D lmTex = lmData[i].lightmapColor;
-                // Export as linear TGA; GetPixels() decodes RGBM → float, clamped to 0-1 in RGBA32.
-                string lmRel = lmTex != null ? ExportTexture(lmTex, outRoot, texPaths, /*linear=*/true) : "";
+                string lmRel = lmTex != null ? ExportLightmap(lmTex, outRoot, texPaths) : "";
                 lightmapPaths.Add(lmRel);
             }
 
@@ -571,6 +575,76 @@ namespace MyRenderExport
             return rel;
         }
 
+        // Export a baked HDR lightmap, decoding Unity's RGBM encoding to true linear
+        // radiance. GetPixels() on a lightmap Texture2D already decodes RGBM → float
+        // (this is the API contract for lightmapColor), so we just need a readable
+        // copy of the source asset and write its float pixels clamped to [0,1].
+        // The runtime shader then samples plain linear values — no RGBM decode needed.
+        static string ExportLightmap(Texture tex, string outRoot, Dictionary<Texture, string> cache)
+        {
+            if (tex == null) return "";
+            if (cache.TryGetValue(tex, out var rel)) return rel;
+
+            var tex2d = tex as Texture2D;
+            if (tex2d == null) return "";
+
+            string name = Sanitize(tex2d.name);
+            if (string.IsNullOrEmpty(name)) name = "tex_" + tex2d.GetInstanceID();
+            rel = "textures/" + name + ".tga";
+            string abs = Path.Combine(outRoot, rel);
+            Directory.CreateDirectory(Path.GetDirectoryName(abs));
+
+            // Make the source asset readable+uncompressed so GetPixels works and the
+            // RGBM decode runs. Import as a Default (non-lightmap) linear texture so
+            // GetPixels returns decoded linear float, then restore settings.
+            string assetPath = AssetDatabase.GetAssetPath(tex2d);
+            var importer = string.IsNullOrEmpty(assetPath)
+                ? null : AssetImporter.GetAtPath(assetPath) as TextureImporter;
+
+            Texture2D readable;
+            bool reimported = false;
+            if (importer != null && (!importer.isReadable ||
+                                      importer.textureCompression != TextureImporterCompression.Uncompressed))
+            {
+                var oType = importer.textureType;
+                var oComp = importer.textureCompression;
+                var oRead = importer.isReadable;
+                var oSRGB = importer.sRGBTexture;
+                importer.textureType        = TextureImporterType.Default;
+                importer.textureCompression = TextureImporterCompression.Uncompressed;
+                importer.isReadable         = true;
+                importer.sRGBTexture        = false; // lightmaps are linear data
+                importer.SaveAndReimport();
+                reimported = true;
+                var src = AssetDatabase.LoadAssetAtPath<Texture2D>(assetPath);
+                readable = new Texture2D(src.width, src.height, TextureFormat.RGBAFloat, false, true);
+                readable.SetPixels(src.GetPixels()); // GetPixels decodes RGBM → linear float
+                readable.Apply();
+                if (reimported)
+                {
+                    importer.textureType        = oType;
+                    importer.textureCompression = oComp;
+                    importer.isReadable         = oRead;
+                    importer.sRGBTexture        = oSRGB;
+                    importer.SaveAndReimport();
+                }
+            }
+            else
+            {
+                // Already readable: GetPixels decodes RGBM directly.
+                readable = new Texture2D(tex2d.width, tex2d.height, TextureFormat.RGBAFloat, false, true);
+                readable.SetPixels(tex2d.GetPixels());
+                readable.Apply();
+            }
+
+            // Write as TGA in linear space. EncodeToTGA on an RGBAFloat texture keeps
+            // the float values, clamped to [0,1] for the 8-bit file.
+            File.WriteAllBytes(abs, ImageConversion.EncodeToTGA(readable));
+            Object.DestroyImmediate(readable);
+            cache[tex] = rel;
+            return rel;
+        }
+
         // ---- helpers ----
 
         static string Sanitize(string s)
@@ -581,6 +655,9 @@ namespace MyRenderExport
         }
 
         static string F(float v) => v.ToString("R", CultureInfo.InvariantCulture);
+
+        // JSON string escaping (shared by BuildSceneJson and the Jb builder below).
+        static string Esc(string s) => string.IsNullOrEmpty(s) ? "" : s.Replace("\\", "\\\\").Replace("\"", "\\\"");
 
         /// Tiny JSON object builder with fixed-order fields.
         class Jb
@@ -631,7 +708,7 @@ namespace MyRenderExport
                 Tail(last);
             }
 
-            static string Esc(string s) => string.IsNullOrEmpty(s) ? "" : s.Replace("\\", "\\\\").Replace("\"", "\\\"");
+            // Esc lives on the outer class MyRenderExporter; visible to this nested type.
         }
     }
 }

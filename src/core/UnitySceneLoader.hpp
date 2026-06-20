@@ -84,10 +84,12 @@ public:
         }
 
         // Pre-load all lightmap textures (linear, no sRGB decode).
+        // Pass the RELATIVE path only — TextureCache::GetTexture prepends
+        // Config::scene_path itself, so prepending here would double it.
         std::vector<Texture2D*> lightmaps;
         for (const auto& lp : a.lightmapPaths)
             lightmaps.push_back(lp.empty() ? nullptr
-                : TextureCache::Get().GetTexture(Config::scene_path + lp, /*linear=*/true));
+                : TextureCache::Get().GetTexture(lp, /*linear=*/true));
 
         for (const auto& o : a.objects) {
             RenderObject ro;
@@ -96,6 +98,21 @@ public:
                 ro.materials.push_back(MaterialCache::Get().GetMaterialFromAsset(mp));
             ro.localToWorld = o.matrix;
             ro.worldToLocal = o.worldToLocal;
+
+            // Bind the baked lightmap: Unity gives each renderer a lightmapIndex
+            // (which entry of LightmapSettings.lightmaps[]) and a per-object
+            // lightmapScaleOffset (xy=scale, zw=offset) mapping UV2 into the atlas.
+            // lightmapIndex == -1 means "not lightmapped".
+            if (o.lightmapIndex >= 0 && o.lightmapIndex < (int)lightmaps.size()
+                && lightmaps[o.lightmapIndex] != nullptr) {
+                ro.lightmapTex = lightmaps[o.lightmapIndex];
+                // Unity's lightmapScaleOffset is (scaleX, scaleY, offsetX, offsetY),
+                // matching _LightmapST exactly. The Y offset is in Unity's bottom-up
+                // V space; the renderer's TGA is loaded top-down by Image.hpp but the
+                // sampler treats V the same way, so we hand the vector through verbatim.
+                ro.lightmapST = o.lightmapScaleOffset;
+                ro.hasLightmap = true;
+            }
 
             // World AABB for frustum culling: transform the mesh's 8 object-space
             // corners. Skipped for skinned meshes (their box changes when animated).

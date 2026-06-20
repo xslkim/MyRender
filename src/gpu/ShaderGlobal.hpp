@@ -104,6 +104,14 @@ namespace gpu
     SamplerState sampler_Lightmap;
     float4       _LightmapST  = float4(1, 1, 0, 0);
     bool         _LIGHTMAP    = false;
+    // Unity HDR lightmaps are RGBM-encoded: final = rgb * (alpha * multiplier).
+    // When the exporter wrote raw RGBM bytes (older exports), the runtime must
+    // decode them. Newer exports pre-decode in the exporter; set this false then.
+    // multiplier is unity_Lightmap_HDR.y (default 8 in URP).
+    bool        _LIGHTMAP_RGBM_DECODE = true;
+    float       _LIGHTMAP_RGBM_MULT   = 8.0f;
+    // Global scale applied to sampled baked-GI radiance (tuning; Unity defaults to 1).
+    half        _LIGHTMAP_INTENSITY   = 1.0f;
 
     // Flat fallback ambient (used when SH data is absent).
     half3 _AmbientColor = half3(0, 0, 0);
@@ -255,7 +263,9 @@ namespace gpu
         DV_NORMAL_MAPPED, // per-pixel normal after normal map
         DV_UV,            // texture coordinates as red/green
         DV_WIRE,          // depth-tested wireframe
-        DV_THREADS        // tint each rasterizer thread's Y-strip
+        DV_THREADS,       // tint each rasterizer thread's Y-strip
+        DV_BAKEDGI,       // bakedGI / lightmap radiance as color (no direct light)
+        DV_LIGHTMAPUV     // lightmapUV as red/green (diagnose lightmap sampling)
     };
     int g_debugView      = DV_NONE;
     int g_dbgRowsPerStrip = 1; // rows handled by one rasterizer thread

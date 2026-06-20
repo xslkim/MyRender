@@ -66,8 +66,15 @@ namespace gpu
         inputData.normalWS = NormalizeNormalPerPixel(inputData.normalWS);
         inputData.viewDirectionWS = viewDirWS;
         // Baked lightmap overrides SH/flat ambient when the object has one.
-        if (_LIGHTMAP && _Lightmap != nullptr)
-            inputData.bakedGI = half3(SAMPLE_TEXTURE2D(_Lightmap, sampler_Lightmap, input.lightmapUV).rgb);
+        // Unity HDR lightmaps are RGBM-encoded: decode rgb * (alpha * multiplier) so
+        // the shader sees true linear radiance. Sampled with CLAMP wrap (baked atlases
+        // never repeat), via the dedicated clamp sampler.
+        if (_LIGHTMAP && _Lightmap != nullptr) {
+            float4 lm = _Lightmap->SamplerClamp(input.lightmapUV.x, input.lightmapUV.y);
+            inputData.bakedGI = _LIGHTMAP_RGBM_DECODE
+                ? half3(lm.rgb * (lm.a * _LIGHTMAP_RGBM_MULT)) * _LIGHTMAP_INTENSITY
+                : half3(lm.rgb) * _LIGHTMAP_INTENSITY;
+        }
         else
             inputData.bakedGI = _SH9_VALID
                 ? EvaluateAmbientProbe(half3(inputData.normalWS))
@@ -134,6 +141,11 @@ namespace gpu
             }
             if (g_debugView == DV_UV)
                 return half4(input.uv.x - floorf(input.uv.x), input.uv.y - floorf(input.uv.y), 0, 1);
+            if (g_debugView == DV_BAKEDGI)
+                return half4(saturate(inputData.bakedGI), 1);
+            if (g_debugView == DV_LIGHTMAPUV)
+                return half4(input.lightmapUV.x - floorf(input.lightmapUV.x),
+                             input.lightmapUV.y - floorf(input.lightmapUV.y), 0, 1);
         }
 
         half4 color = UniversalFragmentPBR(inputData, surfaceData);

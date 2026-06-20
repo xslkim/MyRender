@@ -1,5 +1,7 @@
 #pragma once
 #include <string>
+#include <cstdio>
+#include <cerrno>
 #include "Vector.hpp"
 #include "Utils.hpp"
 #include <math.h>
@@ -90,6 +92,9 @@ private:
         FILE* file;
 
         file = fopen(filename, "rb");
+        if (file == NULL) {
+            fprintf(stderr, "[Image] CANNOT OPEN: '%s' (errno=%d)\n", filename, errno);
+        }
         assert(file != NULL);
         read_tga_header(file, &width, &height, &channels,
             &is_rle, &flip_h, &flip_v);

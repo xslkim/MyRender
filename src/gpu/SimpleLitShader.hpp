@@ -63,6 +63,9 @@ namespace gpu
 
         half fogFactor = ComputeFogFactor(vertexInput.positionCS.z);
         output.fogFactor = fogFactor;
+
+        // Lightmap UV: UV2 scaled/offset by per-object lightmapScaleOffset.
+        output.lightmapUV = input.staticLightmapUV * _LightmapST.xy + _LightmapST.zw;
     }
 
     void SimpleLitInitializeInputData(Varyings& input, half3 normalTS, InputData& inputData)
@@ -91,9 +94,18 @@ namespace gpu
         viewDirWS = SafeNormalize(viewDirWS);
 
         inputData.viewDirectionWS = viewDirWS;
-        inputData.bakedGI = _SH9_VALID
-            ? EvaluateAmbientProbe(half3(inputData.normalWS))
-            : _AmbientColor;
+        // Baked lightmap overrides SH/flat ambient when the object has one (RGBM-decoded).
+        // Lightmaps use CLAMP wrap (see LitShader for rationale).
+        if (_LIGHTMAP && _Lightmap != nullptr) {
+            float4 lm = _Lightmap->SamplerClamp(input.lightmapUV.x, input.lightmapUV.y);
+            inputData.bakedGI = _LIGHTMAP_RGBM_DECODE
+                ? half3(lm.rgb * (lm.a * _LIGHTMAP_RGBM_MULT))
+                : half3(lm.rgb);
+        }
+        else
+            inputData.bakedGI = _SH9_VALID
+                ? EvaluateAmbientProbe(half3(inputData.normalWS))
+                : _AmbientColor;
         inputData.normalizedScreenSpaceUV = GetNormalizedScreenSpaceUV(input.positionCS);
     }
 

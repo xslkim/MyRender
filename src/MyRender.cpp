@@ -185,7 +185,7 @@ static void boxDownsample(const unsigned char* bigBuf, int ssW, int ssH, int ss,
 // ssScale=1: no SSAA. ssScale=2: render at 2× in each dimension, box-downsample.
 static void runCaptureUnity(const std::string& sceneDir, const std::string& outFile,
                             int debugView = gpu::DV_NONE, float animTime = 0.0f,
-                            int ssScale = 1)
+                            int ssScale = 1, float lightmapIntensity = -1.0f)
 {
     const int W = Config::kScreenWidth;
     const int H = Config::kScreenHeight;
@@ -210,6 +210,11 @@ static void runCaptureUnity(const std::string& sceneDir, const std::string& outF
     scene.LoadUnity("scene.json");
     auto t1 = std::chrono::high_resolution_clock::now();
     gpu::g_debugView = debugView;
+    // Optional lightmap intensity override (for tuning sweeps). -1 = keep default 1.0.
+    if (lightmapIntensity >= 0.0f) {
+        gpu::_LIGHTMAP_INTENSITY = lightmapIntensity;
+        printf("[lm] intensity = %.3f\n", lightmapIntensity);
+    }
     if (animTime > 0.0f) scene.AdvanceAnimations(animTime);
     scene.Render();
     auto t2 = std::chrono::high_resolution_clock::now();
@@ -272,7 +277,8 @@ int main(int argc, char* argv[])
         int   dv = (argc > 4) ? atoi(argv[4]) : gpu::DV_NONE; // 1=albedo 2=normalGeom 3=normalMapped 4=uv
         float at = (argc > 5) ? (float)atof(argv[5]) : 0.0f;   // animation seek time (s)
         int   ss = (argc > 6) ? atoi(argv[6]) : 1;              // SSAA scale: 1=off, 2=2x
-        runCaptureUnity(dir, out, dv, at, ss);
+        float li = (argc > 7) ? (float)atof(argv[7]) : -1.0f;   // lightmap intensity override
+        runCaptureUnity(dir, out, dv, at, ss, li);
         SDL_Quit();
         return 0;
     }

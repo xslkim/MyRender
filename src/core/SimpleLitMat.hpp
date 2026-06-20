@@ -28,10 +28,11 @@ public:
 
     void InitAttributes(const Vertex& vertex, Attributes* attributes) const override
     {
-        attributes->positionOS = float4(vertex.position, 1);
-        attributes->texcoord   = vertex.texcoord;
-        attributes->normalOS   = vertex.normal;
-        attributes->tangentOS  = vertex.tangent;
+        attributes->positionOS       = float4(vertex.position, 1);
+        attributes->texcoord         = vertex.texcoord;
+        attributes->staticLightmapUV = vertex.uv2;
+        attributes->normalOS         = vertex.normal;
+        attributes->tangentOS        = vertex.tangent;
     }
 
     void UpdateGpuParameter() const override
@@ -42,5 +43,10 @@ public:
         gpu::_Offset   = offset;
         gpu::_BaseColor = _data.base_color;
         gpu::_Surface  = _data.transparent ? 1.0f : 0.0f;
+
+        // Emission (mirrors LitMat so SimpleLit can also drive _EMISSION).
+        bool hasEmission = (emissionMap != nullptr);
+        gpu::_EmissionMap = emissionMap;
+        gpu::_EMISSION    = hasEmission;
     }
 };
