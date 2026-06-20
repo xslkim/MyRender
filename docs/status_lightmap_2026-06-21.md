@@ -1,8 +1,8 @@
 # MyRender Lightmap 管道 — 实现与诊断状态
 **日期：2026-06-21**
 
-> 本文档为隔夜自动推进的完整记录。**Lightmap 管道现已全部打通并能正确采样，
-> 但渲染仍偏亮**——根因已彻底定位（见第五节），下一步的工作很明确。
+> 本文档为隔夜自动推进的完整记录。**Lightmap 管道打通 + 直接光过亮根因已修复
+> （缺失的 1/π BRDF 归一化）。MSE 从 2465 → 1922。**
 
 ---
 
@@ -11,14 +11,27 @@
 1. **Unity 端已就绪**：光源改 Mixed、烘焙完成、导出器已同步、`scene.json`
    含全部 28 个对象的 `lightmapIndex`/`lightmapScaleOffset` + `lightmaps` 数组，
    `Lightmap-0_comp_light.tga` 已导出。
-2. **C++ 端 Lightmap 管道全部打通且可运行**：修了 4 个 bug（见第三节），
-   从加载→绑定→采样→RGBM 解码→进 `bakedGI`→进最终 PBR，链路完整。
-3. **当前 MSE = 2465 / PSNR 14.21 dB**（2x SSAA，lightmap 开）。
-4. **lightmap 确实在贡献**（对比验证：forced `bakedGI=(50,0,0)` 能让地板变红；
-   DV_BAKEDGI 调试视图显示正确的空间变化）。
-5. **但渲染仍偏亮的根因不在 lightmap**：地板 **lighting multiplier = 1.01**
-   （albedo 164 ≈ 最终 165），而 Unity 参考图是 **0.62**（albedo 164 → 最终 101）。
-   lightmap 的间接光贡献被过强的直接光淹没。**下一步应查直接光照为什么偏强。**
+2. **C++ 端 Lightmap 管道全部打通且可运行**（4 个 bug 全修，见第三节）。
+3. **🔴 最大单一改善 = 找到并修复缺失的 1/π**：直接光过亮的根因是
+   `InitializeBRDFData` 的 diffuse 项 `albedo * oneMinusReflectivity` 少了 1/π
+   归一化。补上后地板 lighting multiplier 从 1.02 → 0.74（目标 0.62），
+   **MSE 2465 → 1922（PSNR 14.21 → 15.29 dB）**。
+4. 当前平均误差 R=-2.4 G=-9 B=-15（轻微偏暗），剩余误差集中在**天空/背景区域**
+   （右上、右下），地板已基本达标。
+
+---
+
+## MSE 演进（更新）
+
+| 状态 | MSE | PSNR | 说明 |
+|------|-----|------|------|
+| SH 基线（无 lightmap） | 1398 | 16.68 | lightmap 接入前 |
+| lightmap 接入，无 RGBM 解码 | 5310 | 10.88 | 当成普通贴图，过亮 |
+| + RGBM 解码 | 3619 | 12.55 | |
+| + CLAMP wrap + 生产路径 | 2465 | 14.21 | lightmap 全打通 |
+| **+ 1/π BRDF 归一化（直接光修复）** | **1922** | **15.29** | **当前** |
+
+
 
 ---
 
@@ -157,16 +170,21 @@ done
 
 ## 七、待办（明天的起点）
 
-- [ ] **最高优先**：按第五节方向查直接光为什么 multiplier≈1.0（应是 0.62）。
-      先做"强制 bakedGI=0"实验定位是直接光还是 GI 的问题。
+- [x] ~~直接光过亮~~：已修复（1/π BRDF 归一化）。MSE 2465→1922。
+- [ ] **天空/背景区域偏暗/错**（1/π 修复后剩余误差主要在右上 gx5-7、右下角）。
+      调查 SkyboxPass + ACES：`skyboxVisualMid/Bot` 是 sRGB 输出值，经 lin3→ACES
+      双重处理。可能是 1/π 修复后天空相对更暗了。
+- [ ] **整体轻微偏暗**（平均 -2.4/-9/-15）：1/π 略有过度。可选：
+      (a) 保留 1/π（物理正确），单独提亮天空；(b) 用介于 1 和 1/π 之间的系数
+      （如 0.5）做经验调优。建议先 (a)。
+- [ ] 验证 1/π 修复不影响 legacy car 场景（已 sanity check，仍能渲染）。
 - [ ] 用户重新导出场景（用新的 `ExportLightmap` RGBM 预解码导出器），届时运行时
       把 `_LIGHTMAP_RGBM_DECODE` 设 false 验证一致性。
-- [ ] 实现正确的 mixed lighting：Baked Indirect 模式下直接光是实时的，
-      Subtractive 模式需 `SubtractDirectMainLightFromLightmap`（目前 commented out）。
-      先确认本场景是哪种模式。
+- [ ] 确认本场景 mixed lighting 模式（Baked Indirect vs Subtractive）。Subtractive
+      需 `SubtractDirectMainLightFromLightmap`（目前 commented out）。
 - [ ] `_LIGHTMAP_INTENSITY` sweep 在我的构建里行为异常（改变值但 MSE 不变），
-      疑似 MSVC inline/whole-program 优化把全局变量当常量缓存——值得用
-      `volatile` 或 `-Od` 验证；当前用 DV_BAKEDGI 已确认 lightmap 路径本身正常。
+      疑似 MSVC inline/whole-program 优化缓存全局变量——用 `volatile` 或 `-Od` 验证。
+      DV_BAKEDGI 已确认 lightmap 路径本身正常。
 
 ---
 

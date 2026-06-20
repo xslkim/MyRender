@@ -94,6 +94,13 @@ namespace gpu {
         half3 brdfSpecular = lerp(kDielectricSpec.rgb, albedo, metallic);
 #endif
 
+        // PBR diffuse BRDF includes a 1/π normalization. URP folds this into the
+        // light's intensity (Lux units), but our light setup (UnitySceneLoader)
+        // uses raw color*intensity without the π bake-in, so apply 1/π here on the
+        // BRDF side to match Unity's physically-based output magnitude.
+        const half kInvPI = half(0.3183098861837907);
+        brdfDiffuse *= kInvPI;
+
         InitializeBRDFDataDirect(albedo, brdfDiffuse, brdfSpecular, reflectivity, oneMinusReflectivity, smoothness, alpha, outBRDFData);
     }
 
