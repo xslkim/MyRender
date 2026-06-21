@@ -87,11 +87,20 @@
 | 地板 L/C/R | 85/120/185 | 66/103/133 | L/C 接近，R 仍偏亮 |
 | 右下角 Bench | 201 | 132 | +69（bakedGI 编码差异） |
 
-**剩余最大误差**：右下角 Bench（金属，smoothness=1）区域 bakedGI 解码值与
-Unity 不一致（空间不均匀——墙壁/右上角在当前参数完美，Bench 角落偏亮）。
-已排除：occlusion map（无）、间接高光（禁用无变化）、reflection probe
-（用 SH9 代替，禁用无变化）、UV 采样（验证正确，含 TGA bottom-up 方向）。
-**结论：是 bakedGI 编码本身的管线不匹配**（alpha² vs linear，光照单位差异）。
+**剩余最大误差**：右下角地板瓷砖（albedo=203，**非 Bench**，是亮色地砖）区域
+lighting multiplier=1.0（直接光+GI 几乎等于 albedo 不衰减），Unity 参考=0.52。
+已逐项排除：
+- ❌ UV 采样（验证正确，含 TGA bottom-up 方向）
+- ❌ occlusion map（材质无）
+- ❌ 间接高光（禁用无变化）
+- ❌ reflection probe（用 SH9，禁用无变化）
+- ❌ alpha² 解码（反而更差；且该角落在 alpha² 下仍 202，说明 GI 非主导）
+- ❌ 阴影（禁用 shadow pass 角落无变化，说明本就不在主光阴影内）
+- ❌ 全局参数（joint-sweep 已到最优 872，角落无法靠全局 mult/direct 修复）
+**结论**：该亮色地砖区域 direct(0.5)+bakedGI 的组合给出 multiplier≈1.0，
+而 Unity 是 0.52。这是该局部 bakedGI 与 Unity 烘焙值的固有差异（相同 TGA、
+相同 UV，但我们的解码/光照管线叠加结果比 Unity 亮约 2x）。需要对该区域做
+per-texel 的 A/B 比对才能定位最后一个差异点。
 
 ---
 
