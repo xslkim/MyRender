@@ -145,7 +145,8 @@ namespace gpu
                 return half4(saturate(inputData.bakedGI), 1);
             if (g_debugView == DV_LIGHTMAPUV)
                 return half4(input.lightmapUV.x - floorf(input.lightmapUV.x),
-                             input.lightmapUV.y - floorf(input.lightmapUV.y), 0, 1);
+                             input.lightmapUV.y - floorf(input.lightmapUV.y),
+                             (_LIGHTMAP && _Lightmap != nullptr) ? 1.0f : 0.0f, 1);
         }
 
         half4 color = UniversalFragmentPBR(inputData, surfaceData);
