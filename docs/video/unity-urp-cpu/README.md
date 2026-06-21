@@ -1,8 +1,9 @@
 # unity-urp-cpu — 从 Unity 导出到 CPU 软渲染：把 URP 一比一搬到 CPU
 
-> 五集系列教学。面向**懂图形/渲染管线的程序员**（看得懂 shader、知道 MVP/光栅化）。
-> 看完后，你会知道 Unity URP 渲染一帧里**数据怎么流、每一步怎么算**——因为我们把
-> 整条管线用 C++ 在 CPU 上重写了一遍，每个中间量都能截图看见。
+> 两集系列教学（每集偏长，≈18–20 分钟）。面向**懂图形/渲染管线的程序员**
+> （看得懂 shader、知道 MVP/光栅化）。看完后，你会知道 Unity URP 渲染一帧里
+> **数据怎么流、每一步怎么算**——因为我们把整条管线用 C++ 在 CPU 上重写了一遍，
+> 每个中间量都能截图看见。
 
 ## 定位与风格
 
@@ -13,15 +14,14 @@
   实时光 + 雾，最终与 Unity 参考图对齐到 PSNR ≈ 24 dB。
 - **语气**：像同事在你旁边讲源码，务实、有据（每个结论都有截图/数字佐证）。
 
-## 五集划分
+## 两集划分
 
-| 集 | 主题 | 讲什么 | 核心截图 |
+| 集 | 主题 | 讲什么 | 核心素材 |
 |----|------|--------|---------|
-| **EP1** | 总览 + Unity 导出 | 架构地图；一帧的数据流；C# 导出器怎么把 Unity 场景写成 JSON+mesh；坐标系/矩阵/光照单位如何对齐 | `final` `wire` `compare_ours_ref` + Unity 编辑器截图 |
-| **EP2** | 几何管线 | 加载 → 顶点变换(MVP) → Sutherland-Hodgman 裁剪 → 光栅化(包围盒+重心) → 透视校正插值 → 深度测试 | `wire` `uv` `normal_geom` |
-| **EP3** | 光照与材质 | albedo/法线贴图 → PBR BRDF → 直接光(主光+spot) → SH 环境光；**一个真实的 1/π bug** 怎么把环境光暗了 π 倍 | `albedo` `normal_mapped` `ambient_sh` `ambient_bug` |
-| **EP4** | 阴影 | 平行光 shadow map（正交拟合场景 AABB）→ 深度 pass → 5×5 PCF 软阴影；spot 透视阴影 | `wire`(光源视角) + 阴影开关对比 |
-| **EP5** | 大气与后处理 + 验证 | 雾(exp2，URP fog 公式) → ACES tonemapping → 天空盒(三区渐变+绕过 ACES)；用 MSE/热力图与 Unity 逐区对比收尾 | `fog_off`↔`final` `diff_heatmap` `compare_ours_ref` |
+| **上集** `ep1` | 导出 + 几何管线 | 架构地图；一帧数据流；C# 导出器把 Unity 场景写成 JSON+mesh；坐标系/矩阵/光照单位对齐；然后顶点变换(MVP) → 裁剪 → 光栅化 → 透视校正插值 → 深度 → 多线程 | `final` `orbit.mp4` `unity_exporter_menu` `wire` `uv` `threads` |
+| **下集** `ep2` | 光照阴影与成像 | albedo/法线 → PBR 直接光(主光+spot) → SH 环境光 → **真实 1/π bug(环境光暗 π 倍)**；阴影(正交 shadow map + 5×5 PCF 软阴影 + spot)；雾(exp2) → ACES → 天空盒；用热力图/对比图与 Unity 对账收尾 | `albedo` `normal_mapped` `direct_only` `ambient_*` `cyan_*_crop` `shadow_*` `fog_off` `diff_heatmap` `compare_ours_ref` |
+
+> 上集 17 块、下集 20 块，每集约 18–20 分钟。按"形状 → 颜色"切分：上集把三角形送上屏幕，下集给像素上色。
 
 ## 截图素材怎么来的
 
@@ -60,12 +60,9 @@ MR_GI=0.625  $EXE --capture-unity $SC ambient_bug.bmp 0 0 2
 ```
 unity-urp-cpu/
 ├── README.md         本文件
-├── assets/           渲染器真实截图 + Unity 对照图（你补）
-├── ep1/ meta.md + script.md   总览 + 导出
-├── ep2/ meta.md + script.md   几何管线
-├── ep3/ meta.md + script.md   光照与材质
-├── ep4/ meta.md + script.md   阴影
-└── ep5/ meta.md + script.md   大气与后处理 + 验证
+├── assets/           渲染器真实截图 + Unity 对照图/视频
+├── ep1/ meta.md + script.md   上集：导出 + 几何管线（17 块）
+└── ep2/ meta.md + script.md   下集：光照阴影与成像（20 块）
 ```
 
-每个 `epN/` 是一个独立可构建的 AutoVideo 工程（≈10 分钟）。构建见 [`../../authoring/BUILD.md`](../../authoring/BUILD.md)。
+`ep1/` 与 `ep2/` 各是一个独立可构建的 AutoVideo 工程（每集 ≈18–20 分钟）。构建见 [`../../authoring/BUILD.md`](../../authoring/BUILD.md)。
