@@ -156,10 +156,43 @@ per-texel 的 A/B 比对才能定位最后一个差异点。
       需 `SubtractDirectMainLightFromLightmap`（GlobalIllumination.hpp:479 注释中）。
 - [x] ~~`_LIGHTMAP_INTENSITY` sweep 异常~~：已确认是 lightmapUV 插值 bug 导致
       （采样到常量），非 MSVC 优化问题。修复后 sweep 正常。
-- [ ] 天空带 +18（次大）：SkyboxPass lin3 正确（已 A/B 验证），可能需要单独的
-      天空亮度调整或检查 exposure。
+- [ ] **🔴 天空盒修复（已研究清楚，待落地，详见第九节）**：用户反馈 Unity 有
+      天地分界 haze 带，我们像"在云层里"。根因：skyboxVisual 不该走 ACES（双重
+      压暗）+ 缺 haze 带。但落地暴露了 **Ground 不写 depth** 的预存 bug
+      （SkyboxPass 假性覆盖 Ground，baseline 872 的 floor=142 是假的；真实=55，
+      ref 106，lit multiplier 0.32 vs 0.62）。**必须先修 Ground 过暗，天空修复
+      才能净改善 MSE。**
 
 ---
+
+## 九、天空盒修复的详细研究（待落地）
+
+### 9.1 根因 1：skyboxVisual 不该走 ACES
+skyboxVisual* 是 procedural skybox 的**显示 sRGB 色**（导出器用 cubemap GetPixels
+采样，已是屏幕色）。当前管线对它做 lin3 + ACES，把天空压暗（Top [0.24,0.34,0.52]
+经管线变 [9,37,90]，而 ref 是 [54,86,135]≈原 Top）。
+**修复**：SkyboxPass 写 alpha=0 标记天空，后处理对天空**绕过 ACES/exposure，直接
+color*255 输出**；UnitySceneLoader 不再对 skyboxVisual 做 lin3。
+
+### 9.2 根因 2：缺 haze 带
+调好的 SampleGradient（已验证天空 y=0..200 与 ref 差 <16）：
+```cpp
+constexpr float hazeBand=0.05f, kZenith=9.0f, kGround=8.0f;
+if (t>=hazeBand)       { Mid→Top }
+else if (t>=-hazeBand) { Mid→Bot (haze dip, pow(u,0.65)) }
+else                   { Bot→ground }
+```
+
+### 9.3 阻塞：Ground 不写 depth（预存 bug）
+SkyboxPass 用 `GetDepth<1.0` 跳过几何，但 Ground 没写 depth（opaque+z_write=true，
+原因待查），被 SkyboxPass 当天空画上去，**假性提亮 floor +88**。alpha-flag 方案
+（`GetColor.w>0.5`）能正确跳过，但暴露真实 floor 过暗（55 vs ref 106）。
+
+### 9.4 落地顺序
+1. 先修 Ground 过暗（lit multiplier 0.32→0.62）：查 NdotL / 法线贴图 / bakedGI。
+2. 修 Ground depth-write bug（让 SkyboxPass 自然跳过）。
+3. 应用天空修复（9.1+9.2），届时 MSE 应净改善。
+4. 当前天空代码研究清楚但**未提交**（会让 MSE 临时变差）。
 
 ## 七、复现命令
 
