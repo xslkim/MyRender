@@ -42,22 +42,13 @@ public:
             model.sky.equatorColor = a.sky.equatorColor;
             model.sky.groundColor  = a.sky.groundColor;
 
-            // The exporter samples the skybox by rendering it to a cubemap and reading
-            // back via GetPixels, which returns sRGB-encoded values for the procedural
-            // sky used here. Convert sRGB → linear so SkyboxPass (linear) and the later
-            // ACES + sRGB output pass see correct magnitudes. (The fallback material-
-            // property branch in the exporter uses .linear already; this scene hits the
-            // cubemap branch, verified by the darken/over-bright A/B.)
-            auto srgbToLinear = [](float v) -> float {
-                if (v <= 0.04045f) return v / 12.92f;
-                return std::pow((v + 0.055f) / 1.055f, 2.4f);
-            };
-            auto lin3 = [&](float3 c) -> float3 {
-                return float3(srgbToLinear(c.x), srgbToLinear(c.y), srgbToLinear(c.z));
-            };
-            model.sky.skyboxVisualTop = lin3(a.sky.skyboxVisualTop);
-            model.sky.skyboxVisualMid = lin3(a.sky.skyboxVisualMid);
-            model.sky.skyboxVisualBot = lin3(a.sky.skyboxVisualBot);
+            // skyboxVisual* are the procedural skybox's display sRGB colours (exporter
+            // samples the cubemap via GetPixels). SkyboxPass writes them through a sky-
+            // specific path that bypasses ACES and outputs straight to sRGB, so keep
+            // them as-is here (no sRGB→linear conversion).
+            model.sky.skyboxVisualTop = a.sky.skyboxVisualTop;
+            model.sky.skyboxVisualMid = a.sky.skyboxVisualMid;
+            model.sky.skyboxVisualBot = a.sky.skyboxVisualBot;
             model.sky.skyboxExposure  = a.sky.skyboxExposure;
             model.sky.valid        = true;
             if (a.sky.shValid) {

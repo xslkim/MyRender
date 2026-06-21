@@ -19,23 +19,35 @@
 // ---------------------------------------------------------------------------
 namespace SkyboxPass {
 
-// Sample the visual sky gradient. Uses skyboxVisual* colors (actual sky appearance).
-// Unity's Procedural sky barely changes colour between 5° and 90° elevation — only
-// the very thin horizon band (< 5°) transitions to the horizon/haze colour.
-// An exponential blend reproduces this: blend→1 quickly above the horizon so the
-// zenith (Top) colour dominates almost everywhere in the upper sky.
+// Sample the visual sky gradient. Unity's Procedural sky: zenith≈Top, mid-sky≈Mid,
+// a thin haze dip at the horizon, then Bot below. Screen sky spans dir.y ~0.24..-0.07.
 inline float3 SampleGradient(const SkyEnvironment& sky, float3 dir)
 {
     float t = dir.y;  // -1 (down) … +1 (up)
 
-    // k=15: at 4° (t≈0.07) blend≈0.65, at 12° (t≈0.21) blend≈0.96 → Top dominates
-    constexpr float k = 15.0f;
-    if (t >= 0.0f) {
-        float blend = 1.0f - std::exp(-t * k);
-        return sky.skyboxVisualMid * (1.0f - blend) + sky.skyboxVisualTop * blend;
+    constexpr float hazeBand = 0.05f;   // ~3°: thin haze dip at the horizon (swept)
+    constexpr float kZenith   = 12.0f;  // Mid→Top going up (swept)
+    constexpr float kGround   = 1.0f;   // below-horizon stays Bot-ish (swept);
+
+    const float3& Top = sky.skyboxVisualTop;
+    const float3& Mid = sky.skyboxVisualMid;
+    const float3& Bot = sky.skyboxVisualBot;
+
+    if (t >= hazeBand) {
+        float u = (t - hazeBand) / (1.0f - hazeBand);
+        float blend = 1.0f - std::exp(-u * kZenith);
+        return Mid * (1.0f - blend) + Top * blend;
+    } else if (t >= -hazeBand) {
+        float u = 1.0f - std::fabs(t) / hazeBand;
+        float blend = u;  // linear (was pow(u, 0.65))
+        return Mid * (1.0f - blend) + Bot * blend;
     } else {
-        float blend = 1.0f - std::exp(t * k);  // t<0 → exp(t*k)<1
-        return sky.skyboxVisualMid * (1.0f - blend) + sky.skyboxVisualBot * blend;
+        // Below horizon: blend toward Bot, not the very dark groundColor. The reference
+        // shows the below-horizon band stays warm/bright (Bot-ish), not near-black.
+        float u = (-t - hazeBand) / (1.0f - hazeBand);
+        float blend = 1.0f - std::exp(-u * kGround) * 0.3f;  // tuned: 0.3 keeps below-horizon bright (Bot-ish)
+        float3 ground = { sky.groundColor.x, sky.groundColor.y, sky.groundColor.z };
+        return Bot * blend + ground * (1.0f - blend);
     }
 }
 
@@ -79,7 +91,7 @@ inline void Render(const SkyEnvironment& sky, const CameraState& cam)
             float3 dir(wx/len, wy/len, wz/len);
 
             float3 c = SampleGradient(sky, dir);
-            ren.SetColor(x, y, float4(c.x, c.y, c.z, 1.0f));
+            ren.SetColor(x, y, float4(c.x, c.y, c.z, 0.0f));
         }
     }
 }

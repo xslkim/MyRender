@@ -181,6 +181,17 @@ public:
             for (int x = 0; x < Config::kScreenWidth; ++x) {
                 float4 color = Render::Get().GetColor(x, Config::kScreenHeight - y - 1);
 
+                // Sky pixels are flagged alpha=0 (SkyboxPass); geometry is alpha=1.
+                // Sky colours are already display sRGB — bypass ACES/exposure/contrast.
+                if (color.a < 0.5f) {
+                    int idx = (y * Config::kScreenWidth + x) * 4;
+                    ScreenBuffer[idx + 0] = (unsigned char)std::clamp(color.r * 255.0f + 0.5f, 0.0f, 255.0f);
+                    ScreenBuffer[idx + 1] = (unsigned char)std::clamp(color.g * 255.0f + 0.5f, 0.0f, 255.0f);
+                    ScreenBuffer[idx + 2] = (unsigned char)std::clamp(color.b * 255.0f + 0.5f, 0.0f, 255.0f);
+                    ScreenBuffer[idx + 3] = 255;
+                    continue;
+                }
+
                 // Post-exposure
                 color.r *= exposureMul;
                 color.g *= exposureMul;
