@@ -110,6 +110,10 @@ namespace gpu
     // multiplier is unity_Lightmap_HDR.y (default 8 in URP).
     bool        _LIGHTMAP_RGBM_DECODE = true;
     float       _LIGHTMAP_RGBM_MULT   = 3.6f; // tune: 8 (Unity default) over-bright; 3.6 matches this scene
+    // Global direct-light scale (tuning; applies to main + additional light radiance).
+    // With the 1/π BRDF fix in place, lit surfaces were ~1.3x too bright vs Unity ref;
+    // 0.7 brings floor multiplier from ~0.96 (R) down toward the ~0.67 target.
+    half        _DIRECT_LIGHT_SCALE   = 0.7f; // tune: with 1/π BRDF, lit surfaces ~1.3x bright; 0.7 best
     // Global scale applied to sampled baked-GI radiance (tuning; Unity defaults to 1).
     half        _LIGHTMAP_INTENSITY   = 1.0f;
 
