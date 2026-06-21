@@ -42,9 +42,12 @@ public:
             model.sky.equatorColor = a.sky.equatorColor;
             model.sky.groundColor  = a.sky.groundColor;
 
-            // Camera::RenderToCubemap outputs sRGB-encoded pixels (even for float cubemaps
-            // in a Linear project), so convert sRGB → linear before handing off to
-            // SkyboxPass, which works in linear light and feeds into ACES + sRGB output.
+            // The exporter samples the skybox by rendering it to a cubemap and reading
+            // back via GetPixels, which returns sRGB-encoded values for the procedural
+            // sky used here. Convert sRGB → linear so SkyboxPass (linear) and the later
+            // ACES + sRGB output pass see correct magnitudes. (The fallback material-
+            // property branch in the exporter uses .linear already; this scene hits the
+            // cubemap branch, verified by the darken/over-bright A/B.)
             auto srgbToLinear = [](float v) -> float {
                 if (v <= 0.04045f) return v / 12.92f;
                 return std::pow((v + 0.055f) / 1.055f, 2.4f);

@@ -171,21 +171,28 @@ done
 ## 七、待办（明天的起点）
 
 - [x] ~~直接光过亮~~：已修复（1/π BRDF 归一化）。MSE 2465→1922。
-- [ ] **🔴 天空太暗（下一个最大单一误差源）**：
-      测量：天空右上区域 ours=34.6 vs ref=97.2（差 -62.6）；整条天空带 -24.3。
-      `skyboxVisualTop`=[0.24,0.34,0.52]（sRGB），lin3 后约 [0.045,0.092,0.22]（均值 0.12），
-      经 ACES+sRGB 输出后偏暗。**与 1/π 修复无关**（SkyboxPass 不走 BRDF），
-      是独立的预存问题。
-      建议方向：
-      (a) 检查 `SkyboxPass::SampleGradient`：`skyboxVisualMid`=[0.62,0.72,0.83]（sRGB）
-          才是天空主色（地平线以上大部分像素），`dir.y` 大的区域应更多用 Mid 而非 Top。
-          当前 k=15 让 Top 在 t>0.2 时几乎全占——可能混合权重过快。
-      (b) 检查这些 visual 颜色是否该直接当 sRGB 用（不经 lin3）——因为它们是
-          "visual appearance"（已经是屏幕上的颜色），而 UnitySceneLoader 把它们
-          当 linear 转。如果 Unity 导出的就是屏幕色，应跳过 lin3。
-      (c) 检查 ACES 对低值（0.12）的压缩是否过强。
-- [ ] **整体轻微偏暗**（平均 -2.4/-9/-15）：1/π 略有过度，主要也是天空贡献。
-      地板（+20.7）仍偏亮一点点。修天空后可能整体平衡更好。
+- [ ] **🔴 右上角暗物体（下一个最大单一误差源）**：经调查**不是天空**，
+      是 albedo=0.81（Plastic_Ridges_Mat）的几何体。诊断：
+      - DV_LIGHTMAPUV 在该区域显示 lightmapUV=(0,0)
+      - DV_BAKEDGI 在该区域显示 0（无间接光）
+      - **关键 A/B**：强制全部走 SH 路径（禁用 lightmap），右上角从 32 → 51.6
+        （亮起来）。说明 lightmap 在那里覆盖了 SH 并给出 0
+      - 但所有 lightmapped mesh 的 UV2 都验证过非零、非全零
+      - 疑点：DV_LIGHTMAPUV=(0,0) 暗示 frac(lightmapUV)=0，可能 lightmapUV
+        恰好落在整数边界，或该对象走的是未 lightmapped 路径但 SH9 对它的法线
+        返回接近 0
+      - **建议下一步**：在 DV_BAKEDGI 里把 _LIGHTMAP 状态编码进 alpha 或单独
+        通道，区分"该对象是否走 lightmap 路径"；再在 DV_LIGHTMAPUV 里编码
+        `_Lightmap != nullptr`。从而确定右上角到底是 lightmapped 还是 unlightmapped。
+- [ ] **整体轻微偏暗**（平均 -2.4/-9/-15）：1/π 略有过度，主要也是右上角贡献。
+      地板（+20.7）仍偏亮一点点。
+- [x] ~~天空 lin3 双重解码~~：**经 A/B 验证 lin3 是正确的**（去掉后 MSE 1922→2953）。
+      skyboxVisual* 通过 cubemap 采样导出，是 sRGB，需要 lin3。SkyboxPass k=15 正确
+      （k=3 会让 MSE 退到 2327，已回退）。
+- [x] 新增 `SamplerClampLinear`（Texture.hpp）：bilinear + clamp，是 Unity lightmap
+      正确采样方式。当前 LitShader 用 point `SamplerClamp`（MSE 1922），SimpleLit 用
+      bilinear。明天可试验 LitShader 切到 bilinear（注意：bilinear 会把 atlas 边缘的
+      黑 padding 混进来，需要 border color 或 pad 处理，所以不一定更好）。
 - [x] Legacy car 场景已 sanity check（仍能渲染）。
 - [ ] 用户重新导出场景（用新的 `ExportLightmap` RGBM 预解码导出器），届时运行时
       把 `_LIGHTMAP_RGBM_DECODE` 设 false 验证一致性。

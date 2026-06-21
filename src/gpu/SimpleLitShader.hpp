@@ -95,9 +95,9 @@ namespace gpu
 
         inputData.viewDirectionWS = viewDirWS;
         // Baked lightmap overrides SH/flat ambient when the object has one (RGBM-decoded).
-        // Lightmaps use CLAMP wrap (see LitShader for rationale).
+        // Lightmaps use Bilinear + CLAMP wrap (see LitShader for rationale).
         if (_LIGHTMAP && _Lightmap != nullptr) {
-            float4 lm = _Lightmap->SamplerClamp(input.lightmapUV.x, input.lightmapUV.y);
+            float4 lm = _Lightmap->SamplerClampLinear(input.lightmapUV.x, input.lightmapUV.y);
             inputData.bakedGI = _LIGHTMAP_RGBM_DECODE
                 ? half3(lm.rgb * (lm.a * _LIGHTMAP_RGBM_MULT))
                 : half3(lm.rgb);

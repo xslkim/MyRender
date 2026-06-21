@@ -76,6 +76,36 @@ public:
         return top * (1 - ty) + bot * ty;
     }
 
+    // Bilinear filtering with CLAMP wrap. Unity samples baked lightmaps with
+    // Bilinear + Clamp: point sampling hits single black padding texels (alpha 0),
+    // and a UV of 1.075 must blend at the atlas edge rather than wrap. This is the
+    // correct lightmap sampler.
+    float4 SamplerClampLinear(float x, float y) const
+    {
+        float u = x < 0.0f ? 0.0f : (x > 1.0f ? 1.0f : x);
+        float v = y < 0.0f ? 0.0f : (y > 1.0f ? 1.0f : y);
+
+        float fx = u * width  - 0.5f;
+        float fy = v * height - 0.5f;
+        int   x0 = (int)floor(fx);
+        int   y0 = (int)floor(fy);
+        float tx = fx - x0;
+        float ty = fy - y0;
+
+        auto clamp = [](int i, int n) { return i < 0 ? 0 : (i >= n ? n - 1 : i); };
+        int x0c = clamp(x0, width),  x1c = clamp(x0 + 1, width);
+        int y0c = clamp(y0, height), y1c = clamp(y0 + 1, height);
+
+        const Vec4f& c00 = buffer[y0c * width + x0c];
+        const Vec4f& c10 = buffer[y0c * width + x1c];
+        const Vec4f& c01 = buffer[y1c * width + x0c];
+        const Vec4f& c11 = buffer[y1c * width + x1c];
+
+        Vec4f top = c00 * (1 - tx) + c10 * tx;
+        Vec4f bot = c01 * (1 - tx) + c11 * tx;
+        return top * (1 - ty) + bot * ty;
+    }
+
 private:
     int     width, height;
     Vec4f*  buffer;
