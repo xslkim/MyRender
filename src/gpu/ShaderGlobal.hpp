@@ -109,7 +109,7 @@ namespace gpu
     // decode them. Newer exports pre-decode in the exporter; set this false then.
     // multiplier is unity_Lightmap_HDR.y (default 8 in URP).
     bool        _LIGHTMAP_RGBM_DECODE = true;
-    float       _LIGHTMAP_RGBM_MULT   = 8.0f;
+    float       _LIGHTMAP_RGBM_MULT   = 3.6f; // tune: 8 (Unity default) over-bright; 3.6 matches this scene
     // Global scale applied to sampled baked-GI radiance (tuning; Unity defaults to 1).
     half        _LIGHTMAP_INTENSITY   = 1.0f;
 
