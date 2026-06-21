@@ -420,6 +420,7 @@ private:
         out.tangentWS   = b0 * v0.tangentWS   + b1 * v1.tangentWS   + b2 * v2.tangentWS;
         out.bitangentWS = b0 * v0.bitangentWS + b1 * v1.bitangentWS + b2 * v2.bitangentWS;
         out.fogFactor   = b0 * v0.fogFactor   + b1 * v1.fogFactor   + b2 * v2.fogFactor;
+        out.lightmapUV  = b0 * v0.lightmapUV  + b1 * v1.lightmapUV  + b2 * v2.lightmapUV;
     }
 
     // Sutherland-Hodgman: clip a polygon against one frustum plane
@@ -441,6 +442,7 @@ private:
                 v->positionWS = vec3_lerp(prev->positionWS, cur->positionWS, t);
                 v->normalWS   = vec4_lerp(prev->normalWS,   cur->normalWS,   t);
                 v->uv         = vec2_lerp(prev->uv,         cur->uv,         t);
+                v->lightmapUV = vec2_lerp(prev->lightmapUV, cur->lightmapUV, t);
                 out.push_back(v);
             }
             if (curIn) {
