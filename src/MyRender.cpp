@@ -222,6 +222,7 @@ static void runCaptureUnity(const std::string& sceneDir, const std::string& outF
     if (const char* a = std::getenv("MR_ALPHA2"))   { gpu::_LIGHTMAP_RGBM_ALPHA2 = atoi(a) != 0; printf("[lm] RGBM_ALPHA2 = %d\n", (int)gpu::_LIGHTMAP_RGBM_ALPHA2); }
     if (const char* g = std::getenv("MR_GI"))       { gpu::_GI_SCALE = (half)atof(g); printf("[lm] GI_SCALE = %.3f\n", (float)gpu::_GI_SCALE); }
     if (const char* s = std::getenv("MR_PCF"))      { gpu::_ShadowSoftnessTexels = (float)atof(s); printf("[lm] PCF_SOFT = %.2f\n", gpu::_ShadowSoftnessTexels); }
+    if (const char* ns = std::getenv("MR_NOSHADOW")){ gpu::_SHADOWS_FORCE_OFF = atoi(ns) != 0; printf("[lm] NOSHADOW = %d\n", (int)gpu::_SHADOWS_FORCE_OFF); }
     // Fog tuning overrides (mutate the model so Scene::Render's SetFog picks them up):
     //   MR_FOG_MODE=1|2|3  MR_FOG_DENSITY=<f>  MR_FOG_START/END=<f>  MR_FOG_R/G/B=<linear>
     if (const char* fm = std::getenv("MR_FOG_MODE")) {

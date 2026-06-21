@@ -473,7 +473,7 @@ namespace gpu
     // shadowCoord is in light clip space (set per-pixel from positionWS in LitInitializeInputData).
     half MainLightRealtimeShadow(float4 shadowCoord)
     {
-        if (!_SHADOWS_ENABLED || _ShadowDepth == nullptr)
+        if (_SHADOWS_FORCE_OFF || !_SHADOWS_ENABLED || _ShadowDepth == nullptr)
             return half(1.0f);
         if (shadowCoord.w <= 0.0f)
             return half(1.0f);

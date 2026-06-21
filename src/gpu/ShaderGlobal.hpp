@@ -225,6 +225,7 @@ namespace gpu
     float    _ShadowBias  = 0.002f;   // constant depth bias to prevent self-shadowing acne
     float    _ShadowSoftnessTexels = 4.0f;  // 5×5 PCF kernel half-width (texels); larger=softer
     bool     _SHADOWS_ENABLED = false;
+    bool     _SHADOWS_FORCE_OFF = false;  // tutorial toggle (MR_NOSHADOW): render unshadowed
 
     // Spot light shadow map (index-0 spot only).
     float4x4 _SpotLightVP;
