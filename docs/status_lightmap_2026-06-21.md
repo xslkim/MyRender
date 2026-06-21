@@ -1,9 +1,9 @@
 # MyRender Lightmap 管道 — 实现与诊断状态
 **日期：2026-06-21（隔夜自动推进，全部完成并提交）**
 
-> **最终结果：MSE 从 5310 → 898（PSNR 10.88 → 18.60 dB），大幅突破 SH 基线 1398。**
+> **最终结果：MSE 从 5310 → 872（PSNR 10.88 → 18.72 dB），大幅突破 SH 基线 1398。**
 > 修复了 4 个关键 bug（4 个 lightmap 小 bug + 直接光 1/π + **光栅化器 lightmapUV
-> 未插值的致命 bug**）+ 直接光 0.7 缩放调优。
+> 未插值的致命 bug**）+ joint-sweep 调优（mult=4.5, direct=0.5）。
 
 ---
 
@@ -15,10 +15,11 @@
 3. **四个关键修复**（按贡献排序）：
    - 🔴 **光栅化器 lightmapUV 从未插值**（致命 bug）→ MSE 1922→964
    - 🔴 直接光缺 1/π BRDF 归一化 → MSE 2465→1922
-   - 直接光 0.7 缩放调优 → MSE 964→898
    - Lightmap RGBM 解码 + clamp wrap + 绑定 + 双路径 → 5310→2465
-4. **当前 MSE = 898 / PSNR 18.60 dB**（2x SSAA，lightmap + 1/π + mult=3.6 + direct=0.7）。
+   - Joint-sweep 调优 mult=4.5/direct=0.5 → 964→872
+4. **当前 MSE = 872 / PSNR 18.72 dB**（2x SSAA）。
    **大幅突破 SH 基线 1398。**
+5. **新增 env-var 调参**（无需重编译）：`MR_LM_MULT`/`MR_DIRECT`/`MR_ALPHA2`
 
 ---
 
@@ -32,10 +33,16 @@
 | **+ 1/π BRDF 归一化**（直接光修复） | 1922 | 15.29 | 直接光根因 |
 | + lightmapUV 插值 bug 修复 | 1589 | 16.12 | default mult=8，偏亮 |
 | + sweep → mult=3.6 | 964 | 18.28 | RGBM 乘数调优 |
-| **+ 直接光 0.7 缩放调优** | **898** | **18.60** | **当前** |
+| + 直接光 0.7 缩放调优 | 898 | 18.60 | |
+| **+ joint-sweep mult=4.5/direct=0.5** | **872** | **18.72** | **当前** |
 
-参考：**SH 基线（无 lightmap）= 1398**。当前 898 **低于** SH 基线，证明 lightmap
+参考：**SH 基线（无 lightmap）= 1398**。当前 872 **远低于** SH 基线，证明 lightmap
 真正生效且优于纯 SH 环境光。
+
+**alpha² vs linear-alpha 验证**：Unity URP 标准 `DecodeLightmapRGBM` 用
+`rgb * 8 * alpha²`，但我们的光照单位管线（raw color*intensity，无 pi-bake）
+**与 linear-alpha `rgb*mult*alpha` 更匹配**：alpha² 最佳 1079 vs linear 最佳 872。
+（alpha² 在 mult=24/direct=0.7 时才接近，仍不如 linear。）
 
 ---
 
@@ -61,30 +68,30 @@
    - 同步修 `ClipWithPlane`（near-plane 裁剪）的 lightmapUV 插值
 
 ### 调优
-7. **RGBM 乘数 8→3.6**（ShaderGlobal.hpp `_LIGHTMAP_RGBM_MULT`）
-   - Unity 默认 `unity_Lightmap_HDR.y=8`，但本场景（+1/π 修复后）mult=8 偏亮
-   - sweep 验证 mult=3.6 最匹配；sweep 3.0=948, 3.6=899, 8.0=1384
-   - 正式应查 unity_Lightmap_HDR 真实导出值
-8. **直接光缩放 0.7**（ShaderGlobal.hpp `_DIRECT_LIGHT_SCALE`，应用在 LightingPhysicallyBased）
-   - 1/π 修复后 lit surface 仍 ~1.3x 偏亮；sweep 0.5=917, 0.7=899(最佳), 0.8=910
-   - 这是经验值，正式应查 URP 主光单位/Lux 转换是否完全对
+7. **RGBM 乘数 + 直接光缩放 joint-sweep**（ShaderGlobal.hpp）
+   - 新增 env-var 调参：`MR_LM_MULT`/`MR_DIRECT`/`MR_ALPHA2`（无需重编译）
+   - 最优 mult=4.5, direct=0.5（sweep 验证：mult 3.6=898→4.5=872；direct 0.7→0.5）
+   - 原理：mult↑ 提亮 lightmap 间接光，direct↓ 压低直接光，配合让 floor L/C 更准
+8. **alpha² 解码验证**（ShaderGlobal.hpp `_LIGHTMAP_RGBM_ALPHA2`，env `MR_ALPHA2`）
+   - Unity 标准 `rgb*8*alpha²` 在我们的管线下表现**更差**（最佳 1079）
+   - linear-alpha `rgb*mult*alpha` 更匹配（最佳 872），原因待查（光照单位）
+   - 保留 alpha² 开关供后续研究
 
 ---
 
-## 四、当前渲染质量（898 / 18.60 dB）
+## 四、当前渲染质量（872 / 18.72 dB）
 
 | 区域 | ours | ref | diff |
 |------|------|-----|------|
-| 整体 | 110.9 | 102.9 | +8.0 |
-| 地板（y430-540） | ~130 | 100.7 | ~+30（右下角仍偏亮） |
-| 右上角（曾暗物体） | ~93 | 92.6 | **~0（完美）** |
-| 天空带 | ~125 | 107.0 | ~+18 |
+| 整体 | 112.2 | 102.9 | +9.3 |
+| 地板 L/C/R | 85/120/185 | 66/103/133 | L/C 接近，R 仍偏亮 |
+| 右下角 Bench | 201 | 132 | +69（bakedGI 编码差异） |
 
-**剩余最大误差**（`tools/mse_regions.py` 8×5）：
-- 右下角地板 gx7,4≈4900, gx6,4≈3100（地板 HDR lightmap 区域，bakedGI>1）
-- 左中区 gx0,2-3≈2800-3000（同上）
-- 这些区域的 floor lightmap bakedGI 值偏大（HDR，~2.6），可能 mult 还需更低，
-  但会牺牲右上角和墙壁的准确度——空间不均匀性暗示 floor UV 采样可能仍有轻微偏差
+**剩余最大误差**：右下角 Bench（金属，smoothness=1）区域 bakedGI 解码值与
+Unity 不一致（空间不均匀——墙壁/右上角在当前参数完美，Bench 角落偏亮）。
+已排除：occlusion map（无）、间接高光（禁用无变化）、reflection probe
+（用 SH9 代替，禁用无变化）、UV 采样（验证正确，含 TGA bottom-up 方向）。
+**结论：是 bakedGI 编码本身的管线不匹配**（alpha² vs linear，光照单位差异）。
 
 ---
 
@@ -112,20 +119,25 @@
 
 ## 六、待办（明天的起点）
 
-- [ ] **剩余最大误差：右下角/左中区 floor lightmap bakedGI 偏大**。
-      深挖结论：**不是采样 bug**（已验证 lightmapUV、atlas 方向都对）。该区域是
-      Bench Bottom Low（金属长椅），lightmapUV=(0.774,0.801) 正确采样到 atlas 的
-      明亮区域（长椅被照亮）。
-      ⚠️ **关键认知**：TGA 文件在 C++ Image.hpp 里是 **bottom-up 存储**（TGA 原生方向），
-      所以 `buffer[r*W+c]` 对应 PIL 的 `lm[H-1-r,c]`。之前我几次 Python 分析误用了
-      top-down，得出"采样到黑色"的错误结论。**lightmap 采样方向是对的。**
-      真正原因：Bench 区域的 bakedGI（RGBM 解码后 ~2）+ 高 albedo + 直接光叠加
-      导致该处偏亮（ours 201 vs ref 132）。但 mult=3.6 在墙壁/右上角又正好。
-      这是 **空间不均匀的过亮**，单一全局 mult 无法同时满足。
-      方向：(a) 检查 Bench 材质是否 metallic 偏高导致反射过强；
-      (b) 该区域可能需要 SubtractDirectMainLightFromLightmap（Subtractive 模式），
-          但需要先确认 mixed lighting 模式；
-      (c) 检查 Specular 项是否在该区域额外加亮。
+- [ ] **剩余最大误差：Bench 区域 bakedGI 编码不匹配**（201 vs ref 132）。
+      已排除所有采样/材质/反射路径，确认是 **bakedGI 解码与 Unity 内部管线差异**。
+      可能方向：
+      (a) 确认 Unity 真实 mixed lighting 模式（Baked Indirect vs Subtractive）。
+          Subtractive 需 `SubtractDirectMainLightFromLightmap`
+          （GlobalIllumination.hpp:584，目前注释掉的 MixRealtimeAndBakedGI 路径）。
+      (b) 光照单位对齐：我们的 raw color*intensity + 手动 1/π 与 Unity URP 的
+          Lux 单位 + pi-baked 可能差一个因子。核对 URP `GetMainLight()` 的
+          intensity 处理。
+      (c) 用 alpha² + 正确的光照单位管线重测（当前 1/π + linear-alpha 是经验拟合）。
+- [x] **mult/direct joint-sweep**：已完成，最优 4.5/0.5（MSE 872）。
+- [x] **alpha² 验证**：已完成，linear-alpha 更优（我们的管线）。
+- [ ] **unity_Lightmap_HDR 真实导出**：从 Unity 读 `lightmapHDR` 属性导出，
+      而非用经验 mult。不同 URP 版本默认值不同（URP 2019=8，新版可能=4）。
+- [ ] 用户重新导出（用新的 `ExportLightmap` RGBM 预解码导出器），届时运行时
+      `_LIGHTMAP_RGBM_DECODE` 设 false，mult 回 1.0 验证一致性。
+- [x] ~~`_LIGHTMAP_INTENSITY` sweep 异常~~：已确认是 lightmapUV 插值 bug 导致。
+- [ ] 天空带 +18（次大）：SkyboxPass lin3 正确（已 A/B 验证），可能需要单独的
+      天空亮度调整或检查 exposure。
 - [ ] **mult=3.6 / direct=0.7 都是经验值**：正式应：
       (a) 从 Unity 导出 `unity_Lightmap_HDR.y`（URP 2019=8，新版可能=4）；
       (b) 核对 URP 方向光 Lux 单位转换是否完全对（1/π + 0.7 是否能合成正确的单位系数）。
