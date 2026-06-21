@@ -27,6 +27,13 @@ CMakeFiles/
 /assets/unity_export/GardenScene/
 /assets/unity_export/Garden/
 
+# Scratch render output / scene backups left in the repo root or scene dirs
+/diff_heat.png
+/out_validation.bmp
+*.bmp
+assets/unity_export/**/*.bak
+assets/unity_export/**/scene_notm.json
+
 # OS
 Thumbs.db
 .DS_Store
