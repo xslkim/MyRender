@@ -1,25 +1,23 @@
-# MyRender Lightmap 管道 — 实现与诊断状态
-**日期：2026-06-21（隔夜自动推进，全部完成并提交）**
+# MyRender 渲染复刻状态
+**日期：2026-06-21（最新：天空盒修复完成）**
 
-> **最终结果：MSE 从 5310 → 872（PSNR 10.88 → 18.72 dB），大幅突破 SH 基线 1398。**
-> 修复了 4 个关键 bug（4 个 lightmap 小 bug + 直接光 1/π + **光栅化器 lightmapUV
-> 未插值的致命 bug**）+ joint-sweep 调优（mult=4.5, direct=0.5）。
+> **当前 MSE = 344 / PSNR 22.77 dB**（2x SSAA，vs Unity 参考图）。
+> 从起点 5310 / 10.88 dB 一路修到 344 / 22.77 dB。
 
 ---
 
-## 一、关键结论（TL;DR）
+## 一、TL;DR
 
-1. **Unity 端已就绪**：光源 Mixed、烘焙完成、导出器同步、`scene.json` 含全部
-   28 对象的 lightmap 字段，`Lightmap-0_comp_light.tga` 已导出。
-2. **C++ Lightmap 管道完全打通**（见第三节 bug 清单）。
-3. **四个关键修复**（按贡献排序）：
-   - 🔴 **光栅化器 lightmapUV 从未插值**（致命 bug）→ MSE 1922→964
-   - 🔴 直接光缺 1/π BRDF 归一化 → MSE 2465→1922
-   - Lightmap RGBM 解码 + clamp wrap + 绑定 + 双路径 → 5310→2465
-   - Joint-sweep 调优 mult=4.5/direct=0.5 → 964→872
-4. **当前 MSE = 872 / PSNR 18.72 dB**（2x SSAA）。
-   **大幅突破 SH 基线 1398。**
-5. **新增 env-var 调参**（无需重编译）：`MR_LM_MULT`/`MR_DIRECT`/`MR_ALPHA2`
+| 项 | 状态 |
+|----|------|
+| Lightmap 管道 | ✅ 完全打通（RGBM 解码、clamp 采样、lightmapUV 插值、绑定） |
+| 直接光能量 | ✅ 修复（1/π BRDF 归一化 + direct scale 调优） |
+| 天空盒 | ✅ 修复（haze 带 + sRGB 绕过 ACES）|
+| 雾效 | ❌ 待做（用户反馈天空还差一点雾，明天弄）|
+| Unity 端 | ✅ 光源 Mixed、烘焙完成、导出器同步、lightmap tga 已导出 |
+| 当前 MSE | **344 / PSNR 22.77 dB**（2x SSAA） |
+
+**对比基线**：SH 基线（无 lightmap）= 1398。当前 344 远低于它。
 
 ---
 
@@ -30,201 +28,159 @@
 | 起点：lightmap 接入，无 RGBM 解码 | 5310 | 10.88 | 当普通贴图，过亮 |
 | + RGBM 解码（rgb*a*8） | 3619 | 12.55 | |
 | + CLAMP wrap + 生产路径 | 2465 | 14.21 | lightmap 全打通 |
-| **+ 1/π BRDF 归一化**（直接光修复） | 1922 | 15.29 | 直接光根因 |
-| + lightmapUV 插值 bug 修复 | 1589 | 16.12 | default mult=8，偏亮 |
-| + sweep → mult=3.6 | 964 | 18.28 | RGBM 乘数调优 |
-| + 直接光 0.7 缩放调优 | 898 | 18.60 | |
-| **+ joint-sweep mult=4.5/direct=0.5** | **872** | **18.72** | **当前** |
-
-参考：**SH 基线（无 lightmap）= 1398**。当前 872 **远低于** SH 基线，证明 lightmap
-真正生效且优于纯 SH 环境光。
-
-**alpha² vs linear-alpha 验证**：Unity URP 标准 `DecodeLightmapRGBM` 用
-`rgb * 8 * alpha²`，但我们的光照单位管线（raw color*intensity，无 pi-bake）
-**与 linear-alpha `rgb*mult*alpha` 更匹配**：alpha² 最佳 1079 vs linear 最佳 872。
-（alpha² 在 mult=24/direct=0.7 时才接近，仍不如 linear。）
+| + 1/π BRDF 归一化（直接光修复） | 1922 | 15.29 | 直接光根因 |
+| + lightmapUV 插值 bug 修复 | 1589 | 16.12 | 光栅化器致命 bug |
+| + joint-sweep mult=4.5/direct=0.5 | 872 | 18.72 | RGBM 乘数 + 直接光缩放调优 |
+| **+ 天空盒修复（haze + sRGB 绕过）** | **344** | **22.77** | **当前** |
 
 ---
 
-## 三、修复的 bug 清单（按时间）
+## 三、所有修复的 bug（按时间）
 
-### Lightmap 管道（5310→2465）
-1. **lightmap 路径双重 scene_path 前缀** → `fopen` 失败崩溃（UnitySceneLoader）
+### A. Lightmap 管道（5310→872）
+1. **lightmap 路径双重 scene_path 前缀** → fopen 失败崩溃（UnitySceneLoader）
 2. **lightmaps 向量从未赋给 RenderObject**（死代码）
-3. **lightmap 用 Repeat 采样**（UV2>1 回绕）→ 新增 `SamplerClamp`
+3. **lightmap 用 Repeat 采样**（UV2>1 回绕）→ 新增 SamplerClamp
 4. **Unity HDR lightmap 的 RGBM 编码未解码** → shader 内联 `rgb*(alpha*mult)`
+5. **🔴 光栅化器 lightmapUV 从未插值**（InterpolateVaryings 漏字段，致命）
+   → MSE 1922→964。ClipWithPlane 同步修。
 
-### 直接光（2465→1922）
-5. **`InitializeBRDFData` 漫反射缺 1/π 归一化**（BRDF.hpp）
-   - `brdfDiffuse = albedo * oneMinusReflectivity` 少了 1/π
-   - 地板 lighting multiplier 1.02 → 0.74（目标 0.62）
+### B. 直接光能量（2465→1922→872）
+6. **InitializeBRDFData 漫反射缺 1/π 归一化**（BRDF.hpp）
+7. **直接光缩放 + RGBM 乘数 joint-sweep 调优**：
+   - `_DIRECT_LIGHT_SCALE = 0.5`（LightingPhysicallyBased radiance 乘）
+   - `_LIGHTMAP_RGBM_MULT = 4.5`（linear-alpha 解码，非 Unity 标准的 alpha²）
+   - 验证：alpha² 在我们的管线更差（1079 vs linear 872）
 
-### 光栅化器（1922→964）— 🔴 最关键
-6. **`InterpolateVaryings` 未插值 `lightmapUV`**（Render.hpp:412）
-   - 只插值了 positionWS/CS/OS、uv、normal/tangent/bitangent、fogFactor
-   - **漏掉 lightmapUV**，导致每个 fragment 的 lightmapUV 恒为 (0,0)
-   - 所有 lightmapped 像素采样 atlas 左下角同一个 texel，**AO 空间变化完全丢失**
-   - 这也解释了之前 `_LIGHTMAP_INTENSITY` sweep 行为异常（采样到常量）
-   - 同步修 `ClipWithPlane`（near-plane 裁剪）的 lightmapUV 插值
-
-### 调优
-7. **RGBM 乘数 + 直接光缩放 joint-sweep**（ShaderGlobal.hpp）
-   - 新增 env-var 调参：`MR_LM_MULT`/`MR_DIRECT`/`MR_ALPHA2`（无需重编译）
-   - 最优 mult=4.5, direct=0.5（sweep 验证：mult 3.6=898→4.5=872；direct 0.7→0.5）
-   - 原理：mult↑ 提亮 lightmap 间接光，direct↓ 压低直接光，配合让 floor L/C 更准
-8. **alpha² 解码验证**（ShaderGlobal.hpp `_LIGHTMAP_RGBM_ALPHA2`，env `MR_ALPHA2`）
-   - Unity 标准 `rgb*8*alpha²` 在我们的管线下表现**更差**（最佳 1079）
-   - linear-alpha `rgb*mult*alpha` 更匹配（最佳 872），原因待查（光照单位）
-   - 保留 alpha² 开关供后续研究
+### C. 天空盒（872→344）
+8. **🔴 skyboxVisual 走了 ACES 被压暗**
+   - skyboxVisual* 是 procedural skybox 的**显示 sRGB 色**（导出器 cubemap GetPixels）
+   - 原管线 lin3 + ACES 把 Top [0.24,0.34,0.52] 变成 [9,37,90]，ref 是 [54,86,135]≈原 Top
+   - 修复：SkyboxPass 写 alpha=0 标记天空，后处理对天空**绕过 ACES/exposure/contrast，
+     直接 color*255 输出**；UnitySceneLoader 不再做 lin3
+9. **缺地平线 haze 带 + below-horizon 用极暗 groundColor**
+   - 原 SampleGradient 只 Mid↔Top 指数混合，无 haze；below-horizon 用 groundColor（接近黑）
+   - 修复：三区渐变（zenith→Top / haze dip at horizon / below→Bot），参数 joint-sweep：
+     `hazeBand=0.05, kZenith=12, kGround=1`
+10. **诊断澄清（曾误判）**：之前以为"SkyboxPass 覆盖 floor"，实际经 z-write 计数器
+    诊断确认 **SkyboxPass 的 depth-skip 完全正常**（floor depth<1.0 被跳过）。floor=54
+    是正确几何值（地平线下天空变暗接近 ref）；baseline 的 floor=142 是 below-horizon
+    天空过亮的假象。
 
 ---
 
-## 四、当前渲染质量（872 / 18.72 dB）
+## 四、当前渲染质量（344 / 22.77 dB）
 
 | 区域 | ours | ref | diff |
 |------|------|-----|------|
-| 整体 | 112.2 | 102.9 | +9.3 |
-| 地板 L/C/R | 85/120/185 | 66/103/133 | L/C 接近，R 仍偏亮 |
-| 右下角 Bench | 201 | 132 | +69（bakedGI 编码差异） |
+| 整体 | 100.8 | 102.9 | -2.1 |
+| 天空 y=0 | 70 | 54 | +9 |
+| 天空 y=80 | 106 | 108 | -9 |
+| 天空 y=200 | 129 | 151 | -25（雾效应改善这里）|
+| 地板 y470-540 | 120 | 106 | +14 |
 
-**剩余最大误差**：右下角地板瓷砖（albedo=203，**非 Bench**，是亮色地砖）区域
-lighting multiplier=1.0（直接光+GI 几乎等于 albedo 不衰减），Unity 参考=0.52。
-已逐项排除：
-- ❌ UV 采样（验证正确，含 TGA bottom-up 方向）
-- ❌ occlusion map（材质无）
-- ❌ 间接高光（禁用无变化）
-- ❌ reflection probe（用 SH9，禁用无变化）
-- ❌ alpha² 解码（反而更差；且该角落在 alpha² 下仍 202，说明 GI 非主导）
-- ❌ 阴影（禁用 shadow pass 角落无变化，说明本就不在主光阴影内）
-- ❌ 全局参数（joint-sweep 已到最优 872，角落无法靠全局 mult/direct 修复）
-**结论**：该亮色地砖区域 direct(0.5)+bakedGI 的组合给出 multiplier≈1.0，
-而 Unity 是 0.52。这是该局部 bakedGI 与 Unity 烘焙值的固有差异（相同 TGA、
-相同 UV，但我们的解码/光照管线叠加结果比 Unity 亮约 2x）。需要对该区域做
-per-texel 的 A/B 比对才能定位最后一个差异点。
+**剩余误差**（`tools/mse_regions.py` 8×5）：
+- 最大集中在中间 bench/工具区（gx4-5, gy1-2，MSE 800-1600）—— bakedGI 编码
+  与 Unity 管线的单位差异（之前已分析，需要深挖 URP Lux 单位）
+- 天空 y=200 附近偏暗 -25（**雾效**能改善）
 
 ---
 
-## 五、当前 C++ 改动清单
+## 五、🔴 明天要做的：雾效（用户反馈）
+
+用户反馈："天空盒好像还差一点雾效"。
+
+### 现状分析
+天空 y=200（接近地平线）我们 129 vs ref 151（偏暗 -25）。Unity 的 procedural sky
+在地平线附近有**大气散射雾效**（atmospheric scattering / fog），让远处地平线变亮、
+泛白。我们的 SampleGradient 现在用纯色插值，没有雾的泛白效果。
+
+### 可能方向
+1. **Unity Procedural Sky 的 Sun-size + Atmosphere Thickness**：
+   - Unity procedural sky material 有 `atmosphereThickness` 参数，控制地平线雾的浓度
+   - 增大地平线附近的亮度/泛白（往白色或太阳色混合）
+2. **Height Fog / Exponential Fog**：URP 的 fog（`Fog` 或 `Volumetric`）在远处把
+   物体向 fogColor 混合。需要从 Unity 导出 fog 设置并实现。
+3. **检查导出器是否导出了 fog**：scene.json 的 environment 里有没有 fog 字段。
+   如果没导出，先在导出器加 fog 导出。
+4. **简单做法**：在 SkyboxPass 的地平线带（hazeBand）往白色/太阳色混合一点，
+   模拟大气散射泛白。可以再 joint-sweep 一个 "fogAmount" 参数。
+
+### 落地步骤建议
+1. 先查 Unity 场景的 skybox material 是 Procedural 还是 gradient，有没有
+   atmosphereThickness / sun size 参数
+2. 查 RenderSettings.fog 是否开启，fogColor/fogDensity 是多少
+3. 导出这些参数（如未导出）
+4. 在 SkyboxPass 或单独 FogPass 实现
+
+---
+
+## 六、C++ 改动清单（当前）
 
 | 文件 | 改动 |
 |------|------|
-| `src/core/Render.hpp` | **InterpolateVaryings + ClipWithPlane 插值 lightmapUV** |
-| `src/core/Texture.hpp` | 新增 `SamplerClamp`、`SamplerClampLinear` |
-| `src/core/UnitySceneLoader.hpp` | lightmap 相对路径加载；对象循环绑定 lightmapTex/ST/hasLightmap；天空 lin3 注释清理 |
-| `src/gpu/BRDF.hpp` | **InitializeBRDFData 漫反射项补 1/π** |
-| `src/gpu/ShaderGlobal.hpp` | `_LIGHTMAP_RGBM_DECODE`/`_LIGHTMAP_RGBM_MULT`(3.6)/`_LIGHTMAP_INTENSITY`/`_DIRECT_LIGHT_SCALE`(0.7)；`DV_BAKEDGI`/`DV_LIGHTMAPUV` |
-| `src/gpu/Lighting.hpp` | `LightingPhysicallyBased` radiance 乘 `_DIRECT_LIGHT_SCALE` |
-| `src/gpu/LitShader.hpp` | lightmap 走 SamplerClamp + RGBM 解码；2 个调试视图（B 通道编码 _LIGHTMAP 状态） |
-| `src/gpu/SimpleLitShader.hpp` | 同 LitShader（SamplerClampLinear） |
+| `src/core/Render.hpp` | **InterpolateVaryings + ClipWithPlane 插值 lightmapUV**；新增 SamplerClamp |
+| `src/core/Texture.hpp` | SamplerClamp / SamplerClampLinear |
+| `src/core/UnitySceneLoader.hpp` | lightmap 相对路径加载；对象循环绑定 lightmapTex/ST/hasLightmap；**skyboxVisual 不做 lin3**（天空走 sRGB 直通） |
+| `src/core/SkyboxPass.hpp` | **三区 haze 渐变**（hazeBand=0.05/kZenith=12/kGround=1）；**alpha=0 标记天空**；below-horizon 用 Bot 不是 groundColor |
+| `src/core/Scene.hpp` | **后处理对天空像素（alpha<0.5）绕过 ACES，直接 sRGB 输出** |
+| `src/gpu/BRDF.hpp` | InitializeBRDFData 漫反射项补 1/π |
+| `src/gpu/ShaderGlobal.hpp` | `_LIGHTMAP_RGBM_MULT`(4.5)/`_DIRECT_LIGHT_SCALE`(0.5)/`_LIGHTMAP_RGBM_ALPHA2`；DV_BAKEDGI/DV_LIGHTMAPUV |
+| `src/gpu/Lighting.hpp` | LightingPhysicallyBased radiance 乘 `_DIRECT_LIGHT_SCALE` |
+| `src/gpu/LitShader.hpp` | lightmap 走 SamplerClamp + RGBM 解码；调试视图 |
+| `src/gpu/SimpleLitShader.hpp` | 同 LitShader |
 | `src/core/SimpleLitMat.hpp` | 传 staticLightmapUV；驱动 _EMISSION |
-| `src/core/Image.hpp` | 加载失败打印路径+errno |
-| `src/core/SkyboxPass.hpp` | k=15 验证正确（误改 k=3 已回退） |
-| `src/MyRender.cpp` | `--capture-unity` 新增第 7 参数 lightmap intensity（tuning） |
+| `src/MyRender.cpp` | `--capture-unity` 第 7 参数 lightmap intensity；env-var 调参（MR_LM_MULT/MR_DIRECT/MR_ALPHA2） |
 
-导出器 `MyRenderExporter.cs`：修 `Esc` 作用域；新增 `ExportLightmap()`（RGBM 预解码）；
+导出器 `MyRenderExporter.cs`：修 Esc 作用域；新增 ExportLightmap()（RGBM 预解码）；
 已同步到 `/g/unity_demo/urp2019/` 和 `urp_sample/`。
 
 ---
 
-## 六、待办（明天的起点）
-
-- [ ] **剩余最大误差：Bench 区域 bakedGI 编码不匹配**（201 vs ref 132）。
-      已排除所有采样/材质/反射路径，确认是 **bakedGI 解码与 Unity 内部管线差异**。
-      可能方向：
-      (a) 确认 Unity 真实 mixed lighting 模式（Baked Indirect vs Subtractive）。
-          Subtractive 需 `SubtractDirectMainLightFromLightmap`
-          （GlobalIllumination.hpp:584，目前注释掉的 MixRealtimeAndBakedGI 路径）。
-      (b) 光照单位对齐：我们的 raw color*intensity + 手动 1/π 与 Unity URP 的
-          Lux 单位 + pi-baked 可能差一个因子。核对 URP `GetMainLight()` 的
-          intensity 处理。
-      (c) 用 alpha² + 正确的光照单位管线重测（当前 1/π + linear-alpha 是经验拟合）。
-- [x] **mult/direct joint-sweep**：已完成，最优 4.5/0.5（MSE 872）。
-- [x] **alpha² 验证**：已完成，linear-alpha 更优（我们的管线）。
-- [ ] **unity_Lightmap_HDR 真实导出**：从 Unity 读 `lightmapHDR` 属性导出，
-      而非用经验 mult。不同 URP 版本默认值不同（URP 2019=8，新版可能=4）。
-- [ ] 用户重新导出（用新的 `ExportLightmap` RGBM 预解码导出器），届时运行时
-      `_LIGHTMAP_RGBM_DECODE` 设 false，mult 回 1.0 验证一致性。
-- [x] ~~`_LIGHTMAP_INTENSITY` sweep 异常~~：已确认是 lightmapUV 插值 bug 导致。
-- [ ] 天空带 +18（次大）：SkyboxPass lin3 正确（已 A/B 验证），可能需要单独的
-      天空亮度调整或检查 exposure。
-- [ ] **mult=3.6 / direct=0.7 都是经验值**：正式应：
-      (a) 从 Unity 导出 `unity_Lightmap_HDR.y`（URP 2019=8，新版可能=4）；
-      (b) 核对 URP 方向光 Lux 单位转换是否完全对（1/π + 0.7 是否能合成正确的单位系数）。
-- [ ] 用户重新导出（用新的 `ExportLightmap` RGBM 预解码导出器），届时运行时
-      `_LIGHTMAP_RGBM_DECODE` 设 false，mult 回 1.0 验证一致性。
-- [ ] 确认本场景 mixed lighting 模式（Baked Indirect vs Subtractive）。Subtractive
-      需 `SubtractDirectMainLightFromLightmap`（GlobalIllumination.hpp:479 注释中）。
-- [x] ~~`_LIGHTMAP_INTENSITY` sweep 异常~~：已确认是 lightmapUV 插值 bug 导致
-      （采样到常量），非 MSVC 优化问题。修复后 sweep 正常。
-- [ ] **🔴 天空盒修复（已研究清楚，待落地，详见第九节）**：用户反馈 Unity 有
-      天地分界 haze 带，我们像"在云层里"。根因：skyboxVisual 不该走 ACES（双重
-      压暗）+ 缺 haze 带。但落地暴露了 **Ground 不写 depth** 的预存 bug
-      （SkyboxPass 假性覆盖 Ground，baseline 872 的 floor=142 是假的；真实=55，
-      ref 106，lit multiplier 0.32 vs 0.62）。**必须先修 Ground 过暗，天空修复
-      才能净改善 MSE。**
-
----
-
-## 九、天空盒修复的详细研究（待落地）
-
-### 9.1 根因 1：skyboxVisual 不该走 ACES
-skyboxVisual* 是 procedural skybox 的**显示 sRGB 色**（导出器用 cubemap GetPixels
-采样，已是屏幕色）。当前管线对它做 lin3 + ACES，把天空压暗（Top [0.24,0.34,0.52]
-经管线变 [9,37,90]，而 ref 是 [54,86,135]≈原 Top）。
-**修复**：SkyboxPass 写 alpha=0 标记天空，后处理对天空**绕过 ACES/exposure，直接
-color*255 输出**；UnitySceneLoader 不再对 skyboxVisual 做 lin3。
-
-### 9.2 根因 2：缺 haze 带
-调好的 SampleGradient（已验证天空 y=0..200 与 ref 差 <16）：
-```cpp
-constexpr float hazeBand=0.05f, kZenith=9.0f, kGround=8.0f;
-if (t>=hazeBand)       { Mid→Top }
-else if (t>=-hazeBand) { Mid→Bot (haze dip, pow(u,0.65)) }
-else                   { Bot→ground }
-```
-
-### 9.3 阻塞：Ground 不写 depth（预存 bug）
-SkyboxPass 用 `GetDepth<1.0` 跳过几何，但 Ground 没写 depth（opaque+z_write=true，
-原因待查），被 SkyboxPass 当天空画上去，**假性提亮 floor +88**。alpha-flag 方案
-（`GetColor.w>0.5`）能正确跳过，但暴露真实 floor 过暗（55 vs ref 106）。
-
-### 9.4 落地顺序
-1. 先修 Ground 过暗（lit multiplier 0.32→0.62）：查 NdotL / 法线贴图 / bakedGI。
-2. 修 Ground depth-write bug（让 SkyboxPass 自然跳过）。
-3. 应用天空修复（9.1+9.2），届时 MSE 应净改善。
-4. 当前天空代码研究清楚但**未提交**（会让 MSE 临时变差）。
-
-## 七、复现命令
+## 七、调参命令（env-var，无需重编译）
 
 ```bash
 cmake --build G:\MyRender\build --config Release --target MyRender
-MyRender.exe --capture-unity assets/unity_export/SampleScene out/lightmap/final.bmp 0 0 2
-python tools/mse.py out/lightmap/final.bmp assets/unity_export/SampleScene/unity_ref.png
-# 调试视图：7=bakedGI, 8=lightmapUV(B通道=_LIGHTMAP状态), 1=albedo
-MyRender.exe --capture-unity assets/unity_export/SampleScene out/x.bmp 7 0 2
-# lightmap intensity sweep（第 7 参数）
-for LI in 0.3 0.5 1.0; do
-  MyRender.exe --capture-unity assets/unity_export/SampleScene out/lm_$LI.bmp 0 0 1 $LI
-done
+
+# 渲染
+MyRender.exe --capture-unity assets/unity_export/SampleScene out/final.bmp 0 0 2
+
+# 测 MSE
+python tools/mse.py out/final.bmp assets/unity_export/SampleScene/unity_ref.png
+
+# 调参 sweep（第 7 参数 = lightmap intensity；env-var 调 mult/direct/alpha2）
+MR_LM_MULT=4.5 MR_DIRECT=0.5 MyRender.exe --capture-unity ... out/x.bmp 0 0 2
+
+# 调试视图：7=bakedGI, 8=lightmapUV(B=_LIGHTMAP), 1=albedo
+MyRender.exe --capture-unity ... out/x.bmp 7 0 2
 ```
 
 ---
 
-## 八、提交历史（本 session）
+## 八、其他待办（优先级低）
+
+- [ ] **中间 bench/工具区 bakedGI 偏差**（MSE 800-1600）：alpha² vs linear，
+      光照单位（raw color*intensity vs URP Lux）。需要深挖 URP GetMainLight() 的
+      intensity 处理。
+- [ ] `unity_Lightmap_HDR` 真实导出（而非经验 mult=4.5）
+- [ ] 用户重新导出（用新 ExportLightmap RGBM 预解码），届时 `_LIGHTMAP_RGBM_DECODE`
+      设 false，mult 回 1.0 验证一致性
+- [ ] 确认 mixed lighting 模式（Baked Indirect vs Subtractive）。Subtractive 需
+      `SubtractDirectMainLightFromLightmap`
+
+---
+
+## 九、提交历史（本 session）
 
 ```
-dc85f94 直接光缩放 0.7 + 调优收尾：MSE 964→898（PSNR 18.60）
-69623ff 状态文档最终更新：MSE 5310→964，三个关键 bug 修复总结 + 明天起点
-466f241 Lightmap RGBM 乘数调优：8→3.6，MSE 1589→964
-887c641 修复光栅化器关键 bug：InterpolateVaryings + ClipWithPlane 未插值 lightmapUV
-96cedf5 调试增强：DV_LIGHTMAPUV 蓝通道编码 _LIGHTMAP 状态；确认右上角为 lightmapped 对象
-69af0fe 诊断：右上角暗物体非天空，是几何体；新增 SamplerClampLinear；清理天空注释
-7d5b90a 状态文档更新：定位天空偏暗为下一最大误差源
-2a7f17e 修复直接光过亮：InitializeBRDFData 漫反射项补 1/π 归一化
-3d5ea65 Lightmap: 打通完整管道 + RGBM 解码 + clamp 采样；定位直接光过亮根因
+033dbb1 天空盒修复：MSE 872→344（PSNR 18.72→22.77 dB）
+e8a7a75 文档：天空盒修复研究完成（根因+方案）
+dc85f94 直接光缩放 0.7 + 调优收尾：MSE 964→898
+... (joint-sweep、lightmapUV 插值、1/π、RGBM 等共 ~16 个 commit)
 ```
 
 ---
 
 *文件路径：`G:\MyRender\docs\status_lightmap_2026-06-21.md`*
-*MSE 工具：`tools/mse.py`、`tools/mse_regions.py`*
+*MSE 工具：`tools/mse.py`（整体）、`tools/mse_regions.py`（网格分解 + 热力图）*
+*对比图：`out/lightmap/comparison_final.png`*
