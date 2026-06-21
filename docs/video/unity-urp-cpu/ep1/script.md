@@ -152,11 +152,11 @@ C++ 这边的加载器把它们读进来
 窗口内等宽字体 26px，语法高亮（键名 #79c0ff，字符串 #a5d6ff，数字 #d2a8ff，标点 #8b949e），展示精简后的 JSON：
   {
     "coordinateSystem": "unity-lh-yup-zforward-meters",
-    "camera":    { "position": [...], "rotation": [...], "fov": 60, "near": 0.3, "far": 1000 },
+    "camera":    { "position": [2.32, 1.2, 3.3], "fovVertical": 60, "near": 0.3, "far": 1000 },
     "mainLight": { "direction": [...], "color": [1, 0.90, 0.67], "intensity": 2 },
     "environment": { "ambientMode": "skybox", "sh": [ ...27 个系数... ] },
     "fog":       { "enabled": true, "mode": "exp2", "color": [...], "density": 0.05 },
-    "objects": [ { "name": "Bench", "mesh": "meshes/bench_top.mesh", "material": {...} }, ... ]
+    "objects": [ { "name": "Drywall Panel", "mesh": "meshes/drywall_panel_15922.mesh", "material": {...} }, ... ]
   }
 [0s] 代码窗口淡入。
 [1s] 用 accent 色高亮框依次扫过 "camera" / "mainLight" / "environment" / "fog" / "objects" 五个字段，每个停 0.8s，右侧浮出一个 24px 小标签说明它对应的渲染阶段。
