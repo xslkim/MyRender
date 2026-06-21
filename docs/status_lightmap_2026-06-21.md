@@ -112,10 +112,20 @@
 
 ## 六、待办（明天的起点）
 
-- [ ] **剩余最大误差：右下角地板 / 左中区 floor lightmap bakedGI 偏大**（HDR 值 ~2.6，
-      经 saturate 看似均匀明亮）。整体 +8 偏亮主要来自这两块。空间不均匀性
-      （墙壁/右上角在 mult=3.6 完美，但 floor 角落偏亮）暗示 floor UV 采样可能
-      仍有轻微偏差，或该 atlas 区域确实存了更大的 HDR 值。
+- [ ] **剩余最大误差：右下角/左中区 floor lightmap bakedGI 偏大**。
+      深挖结论：**不是采样 bug**（已验证 lightmapUV、atlas 方向都对）。该区域是
+      Bench Bottom Low（金属长椅），lightmapUV=(0.774,0.801) 正确采样到 atlas 的
+      明亮区域（长椅被照亮）。
+      ⚠️ **关键认知**：TGA 文件在 C++ Image.hpp 里是 **bottom-up 存储**（TGA 原生方向），
+      所以 `buffer[r*W+c]` 对应 PIL 的 `lm[H-1-r,c]`。之前我几次 Python 分析误用了
+      top-down，得出"采样到黑色"的错误结论。**lightmap 采样方向是对的。**
+      真正原因：Bench 区域的 bakedGI（RGBM 解码后 ~2）+ 高 albedo + 直接光叠加
+      导致该处偏亮（ours 201 vs ref 132）。但 mult=3.6 在墙壁/右上角又正好。
+      这是 **空间不均匀的过亮**，单一全局 mult 无法同时满足。
+      方向：(a) 检查 Bench 材质是否 metallic 偏高导致反射过强；
+      (b) 该区域可能需要 SubtractDirectMainLightFromLightmap（Subtractive 模式），
+          但需要先确认 mixed lighting 模式；
+      (c) 检查 Specular 项是否在该区域额外加亮。
 - [ ] **mult=3.6 / direct=0.7 都是经验值**：正式应：
       (a) 从 Unity 导出 `unity_Lightmap_HDR.y`（URP 2019=8，新版可能=4）；
       (b) 核对 URP 方向光 Lux 单位转换是否完全对（1/π + 0.7 是否能合成正确的单位系数）。
