@@ -33,6 +33,7 @@
   "skyboxExposure": 1.25,
   "sh": [0.2850269, -0.1830811, 0.00559151173, -0.006663804, -0.005178908, 0.004345663, 0.00484990329, -0.008874411, 0.0160950869, 0.3713935, -0.181534812, 0.0105558187, -0.01257749, -0.009908539, 0.008314639, 0.00853928, -0.0156322271, 0.0283441674, 0.496010453, -0.09780075, 0.0236891657, -0.0282262024, -0.0233134422, 0.0195643473, 0.0127235688, -0.02837199, 0.0431457646]
 },
+  "fog": { "enabled": true, "mode": "exp2", "color": [0.381105155, 0.402061075, 0.458811462], "density": 0.05, "start": 0, "end": 300 },
   "postProcessing": {
   "tonemapping": "aces",
   "postExposure": 0,
@@ -55,8 +56,8 @@
       "worldToLocal": [-1.1920929E-07, 0, -1.00000012, 0, 0, 1, 0, 0, 1.00000012, 0, -1.1920929E-07, 0, 0, 0, 0, 1],
       "skinned": false,
       "anim": "",
-      "lightmapIndex": 0,
-      "lightmapScaleOffset": [0.359346539, 0.359346539, 0.5738862, -0.0120497346]
+      "lightmapIndex": -1,
+      "lightmapScaleOffset": [1, 1, 0, 0]
     },
     {
       "name": "Ground",
@@ -69,8 +70,8 @@
       "worldToLocal": [-1.1920929E-07, 0, -1.00000012, 0, 0, 1, 0, 0, 1.00000012, 0, -1.1920929E-07, 0, 0, 0, 0, 1],
       "skinned": false,
       "anim": "",
-      "lightmapIndex": 0,
-      "lightmapScaleOffset": [0.4961304, 0.4961304, -0.00978161, 0.499205649]
+      "lightmapIndex": -1,
+      "lightmapScaleOffset": [1, 1, 0, 0]
     },
     {
       "name": "OSB Panel",
@@ -83,8 +84,8 @@
       "worldToLocal": [-1.1920929E-07, 0, -1.00000012, 1.22464677E-17, 0, 1, 0, 0, 1.00000012, 0, -1.1920929E-07, 0.099999994, 0, 0, 0, 1],
       "skinned": false,
       "anim": "",
-      "lightmapIndex": 0,
-      "lightmapScaleOffset": [0.298570156, 0.298570156, 0.520569444, 0.4773108]
+      "lightmapIndex": -1,
+      "lightmapScaleOffset": [1, 1, 0, 0]
     },
     {
       "name": "Stud Frame",
@@ -97,8 +98,8 @@
       "worldToLocal": [-1.1920929E-07, 0, -1.00000012, -0.049999997, 0, 1, 0, -1.22, 1.00000012, 0, -1.1920929E-07, -1.78, 0, 0, 0, 1],
       "skinned": false,
       "anim": "",
-      "lightmapIndex": 0,
-      "lightmapScaleOffset": [0.516670942, 0.516670942, -0.00564497, -0.00993598]
+      "lightmapIndex": -1,
+      "lightmapScaleOffset": [1, 1, 0, 0]
     },
     {
       "name": "Stud Pile",
@@ -111,8 +112,8 @@
       "worldToLocal": [-1.1920929E-07, 0, -1.00000012, 0, 0, 1, 0, 0, 1.00000012, 0, -1.1920929E-07, 0, 0, 0, 0, 1],
       "skinned": false,
       "anim": "",
-      "lightmapIndex": 0,
-      "lightmapScaleOffset": [0.18222791, 0.18222791, 0.802272737, 0.502463341]
+      "lightmapIndex": -1,
+      "lightmapScaleOffset": [1, 1, 0, 0]
     },
     {
       "name": "Paint 1G Bucket",
@@ -223,8 +224,8 @@
       "worldToLocal": [-0.6573195, 0, -0.7536123, 2.59430075, 0, 1, 0, -0.351, 0.7536123, 0, -0.6573195, -1.34723043, 0, 0, 0, 1],
       "skinned": false,
       "anim": "",
-      "lightmapIndex": 0,
-      "lightmapScaleOffset": [0.0587257557, 0.0587257557, 0.6330053, 0.888739]
+      "lightmapIndex": -1,
+      "lightmapScaleOffset": [1, 1, 0, 0]
     },
     {
       "name": "Bench Legs",
@@ -237,8 +238,8 @@
       "worldToLocal": [-0.6573195, 0, -0.7536123, 2.58430076, 0, 1, 0, -0.3677829, 0.7536123, 0, -0.6573195, -1.34723043, 0, 0, 0, 1],
       "skinned": false,
       "anim": "",
-      "lightmapIndex": 0,
-      "lightmapScaleOffset": [0.119708434, 0.119708434, 0.6297431, 0.768948853]
+      "lightmapIndex": -1,
+      "lightmapScaleOffset": [1, 1, 0, 0]
     },
     {
       "name": "Bench Top",
@@ -251,8 +252,8 @@
       "worldToLocal": [-0.6573195, 0, -0.7536123, 2.58430076, 0, 1, 0, -0.73, 0.7536123, 0, -0.6573195, -1.34723043, 0, 0, 0, 1],
       "skinned": false,
       "anim": "",
-      "lightmapIndex": 0,
-      "lightmapScaleOffset": [0.1676953, 0.1676953, 0.712213933, 0.339003921]
+      "lightmapIndex": -1,
+      "lightmapScaleOffset": [1, 1, 0, 0]
     },
     {
       "name": "Supports",
@@ -265,8 +266,8 @@
       "worldToLocal": [-0.6573195, 0, -0.7536123, 2.58430552, 0, 1, 0, -0.565860748, 0.7536123, 0, -0.6573195, -1.347167, 0, 0, 0, 1],
       "skinned": false,
       "anim": "",
-      "lightmapIndex": 0,
-      "lightmapScaleOffset": [0.2261065, 0.2261065, 0.512854636, 0.00135398842]
+      "lightmapIndex": -1,
+      "lightmapScaleOffset": [1, 1, 0, 0]
     },
     {
       "name": "Upper Covers",
@@ -279,8 +280,8 @@
       "worldToLocal": [-0.6573195, 0, -0.7536123, 2.58430076, 0, 1, 0, -0.5305784, 0.7536123, 0, -0.6573195, -1.34723043, 0, 0, 0, 1],
       "skinned": false,
       "anim": "",
-      "lightmapIndex": 0,
-      "lightmapScaleOffset": [0.1405365, 0.1405365, 0.8598226, 0.341070622]
+      "lightmapIndex": -1,
+      "lightmapScaleOffset": [1, 1, 0, 0]
     },
     {
       "name": "Bench Bottom Low",
@@ -293,8 +294,8 @@
       "worldToLocal": [-0.6573195, 0, -0.7536123, 2.58430076, 0, 1, 0, -0.351, 0.7536123, 0, -0.6573195, -1.34723043, 0, 0, 0, 1],
       "skinned": false,
       "anim": "",
-      "lightmapIndex": 0,
-      "lightmapScaleOffset": [0.103359371, 0.103359371, 0.748605, 0.7664756]
+      "lightmapIndex": -1,
+      "lightmapScaleOffset": [1, 1, 0, 0]
     },
     {
       "name": "Bench Legs Low",
@@ -307,8 +308,8 @@
       "worldToLocal": [-0.6573195, 0, -0.7536123, 2.58430076, 0, 1, 0, -0.3677829, 0.7536123, 0, -0.6573195, -1.34723043, 0, 0, 0, 1],
       "skinned": false,
       "anim": "",
-      "lightmapIndex": 0,
-      "lightmapScaleOffset": [0.0538477451, 0.0538477451, 0.8392526, 0.7702523]
+      "lightmapIndex": -1,
+      "lightmapScaleOffset": [1, 1, 0, 0]
     },
     {
       "name": "Bench Top Low",
@@ -321,8 +322,8 @@
       "worldToLocal": [-0.6573195, 0, -0.7536123, 2.58430076, 0, 1, 0, -0.73, 0.7536123, 0, -0.6573195, -1.34723043, 0, 0, 0, 1],
       "skinned": false,
       "anim": "",
-      "lightmapIndex": 0,
-      "lightmapScaleOffset": [0.111283317, 0.111283317, 0.5239236, 0.7667025]
+      "lightmapIndex": -1,
+      "lightmapScaleOffset": [1, 1, 0, 0]
     },
     {
       "name": "Supports Low",
@@ -363,8 +364,8 @@
       "worldToLocal": [1.42108547E-14, 1.00000012, 1.192093E-07, -0.8130002, 0.9275572, -1.46724545E-07, -0.8090386, -1.8169663, -0.6573197, 0, -0.7536124, 2.37530136, 0, 0, 0, 1],
       "skinned": false,
       "anim": "",
-      "lightmapIndex": 0,
-      "lightmapScaleOffset": [0.1340332, 0.1340332, 0.7963104, 0.6799818]
+      "lightmapIndex": -1,
+      "lightmapScaleOffset": [1, 1, 0, 0]
     },
     {
       "name": "Jigsaw",
@@ -436,6 +437,5 @@
       "lightmapIndex": -1,
       "lightmapScaleOffset": [1, 1, 0, 0]
     }
-  ],
-  "lightmaps": ["textures/Lightmap-0_comp_light.tga"]
+  ]
 }

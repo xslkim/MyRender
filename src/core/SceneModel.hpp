@@ -77,6 +77,15 @@ struct SkyEnvironment {
     bool   valid           = false;
 };
 
+struct Fog {
+    bool        enabled = false;
+    int         mode    = 3;   // 1=linear, 2=exp, 3=exp2
+    float3      color   = float3(0.5f, 0.5f, 0.5f);  // linear
+    float       density = 0.0f;
+    float       start   = 0.0f;
+    float       end     = 300.0f;
+};
+
 struct AdditionalLight {
     bool   isSpot    = false;
     float3 position  = {};
@@ -93,6 +102,7 @@ struct SceneModel {
     float3                         ambientColor     = float3(0, 0, 0);
     float                          ambientIntensity = 1.0f;
     SkyEnvironment                 sky;
+    Fog                            fog;
     PostProcessing                 postProcessing;
     std::vector<AdditionalLight>   additionalLights;
     std::vector<RenderObject>      objects;

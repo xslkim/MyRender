@@ -130,6 +130,10 @@ namespace MyRenderExport
             sb.Append(EnvironmentJson());
             sb.Append(",\n");
 
+            sb.Append("  \"fog\": ");
+            sb.Append(FogJson());
+            sb.Append(",\n");
+
             sb.Append("  \"postProcessing\": ");
             sb.Append(PostProcessingJson());
             sb.Append(",\n");
@@ -378,6 +382,26 @@ namespace MyRenderExport
                    $"  \"skyboxVisualBot\": [{F(visBot.r)}, {F(visBot.g)}, {F(visBot.b)}],\n" +
                    $"  \"skyboxExposure\": {F(skyboxExposure)},\n" +
                    $"  \"sh\": {sb2}\n}}";
+        }
+
+        // Export realtime fog (RenderSettings.fog). Color is written in linear space to
+        // match the renderer's lighting pipeline. density is for exp/exp2; start/end for linear.
+        static string FogJson()
+        {
+            bool enabled = RenderSettings.fog;
+            string mode;
+            switch (RenderSettings.fogMode)
+            {
+                case FogMode.Linear:               mode = "linear"; break;
+                case FogMode.Exponential:          mode = "exp";    break;
+                default:                           mode = "exp2";   break; // ExponentialSquared (Unity default)
+            }
+            Color c = RenderSettings.fogColor.linear;
+            return $"{{ \"enabled\": {(enabled ? "true" : "false")}, \"mode\": \"{mode}\", " +
+                   $"\"color\": [{F(c.r)}, {F(c.g)}, {F(c.b)}], " +
+                   $"\"density\": {F(RenderSettings.fogDensity)}, " +
+                   $"\"start\": {F(RenderSettings.fogStartDistance)}, " +
+                   $"\"end\": {F(RenderSettings.fogEndDistance)} }}";
         }
 
         // Export post-processing Volume settings (tonemapping, bloom, color adjustments).

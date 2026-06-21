@@ -220,6 +220,23 @@ static void runCaptureUnity(const std::string& sceneDir, const std::string& outF
     if (const char* m = std::getenv("MR_LM_MULT"))  { gpu::_LIGHTMAP_RGBM_MULT = (float)atof(m); printf("[lm] RGBM_MULT = %.3f\n", gpu::_LIGHTMAP_RGBM_MULT); }
     if (const char* d = std::getenv("MR_DIRECT"))   { gpu::_DIRECT_LIGHT_SCALE = (half)atof(d);  printf("[lm] DIRECT_SCALE = %.3f\n", (float)gpu::_DIRECT_LIGHT_SCALE); }
     if (const char* a = std::getenv("MR_ALPHA2"))   { gpu::_LIGHTMAP_RGBM_ALPHA2 = atoi(a) != 0; printf("[lm] RGBM_ALPHA2 = %d\n", (int)gpu::_LIGHTMAP_RGBM_ALPHA2); }
+    if (const char* g = std::getenv("MR_GI"))       { gpu::_GI_SCALE = (half)atof(g); printf("[lm] GI_SCALE = %.3f\n", (float)gpu::_GI_SCALE); }
+    if (const char* s = std::getenv("MR_PCF"))      { gpu::_ShadowSoftnessTexels = (float)atof(s); printf("[lm] PCF_SOFT = %.2f\n", gpu::_ShadowSoftnessTexels); }
+    // Fog tuning overrides (mutate the model so Scene::Render's SetFog picks them up):
+    //   MR_FOG_MODE=1|2|3  MR_FOG_DENSITY=<f>  MR_FOG_START/END=<f>  MR_FOG_R/G/B=<linear>
+    if (const char* fm = std::getenv("MR_FOG_MODE")) {
+        Fog& f = scene.Model().fog;
+        f.enabled = true;
+        f.mode    = atoi(fm);
+        if (std::getenv("MR_FOG_DENSITY")) f.density = (float)atof(std::getenv("MR_FOG_DENSITY"));
+        if (std::getenv("MR_FOG_START"))   f.start   = (float)atof(std::getenv("MR_FOG_START"));
+        if (std::getenv("MR_FOG_END"))     f.end     = (float)atof(std::getenv("MR_FOG_END"));
+        if (std::getenv("MR_FOG_R"))       f.color.x = (float)atof(std::getenv("MR_FOG_R"));
+        if (std::getenv("MR_FOG_G"))       f.color.y = (float)atof(std::getenv("MR_FOG_G"));
+        if (std::getenv("MR_FOG_B"))       f.color.z = (float)atof(std::getenv("MR_FOG_B"));
+        printf("[fog] mode=%d density=%.4f start=%.1f end=%.1f color=(%.3f,%.3f,%.3f)\n",
+               f.mode, f.density, f.start, f.end, f.color.x, f.color.y, f.color.z);
+    }
     if (animTime > 0.0f) scene.AdvanceAnimations(animTime);
     scene.Render();
     auto t2 = std::chrono::high_resolution_clock::now();

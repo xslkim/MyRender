@@ -57,6 +57,14 @@ public:
             }
         }
 
+        // Realtime fog (Unity RenderSettings.fog).
+        model.fog.enabled = a.fog.enabled;
+        model.fog.mode    = (a.fog.mode == "linear") ? 1 : (a.fog.mode == "exp") ? 2 : 3;
+        model.fog.color   = a.fog.color;
+        model.fog.density = a.fog.density;
+        model.fog.start   = a.fog.start;
+        model.fog.end     = a.fog.end;
+
         model.postProcessing.tonemapping   = a.postProcessing.tonemapping;
         model.postProcessing.postExposure  = a.postProcessing.postExposure;
         model.postProcessing.contrast      = a.postProcessing.contrast;

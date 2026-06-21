@@ -146,6 +146,16 @@ struct SkyEnvironmentAsset {
     bool        valid        = false;             // false → fall back to backgroundColor
 };
 
+// Realtime fog (Unity RenderSettings.fog). Optional top-level "fog" block.
+struct FogAsset {
+    bool        enabled = false;
+    std::string mode    = "exp2";          // linear | exp | exp2
+    float3      color   = float3(0.5f, 0.5f, 0.5f);  // linear
+    float       density = 0.0f;            // for exp/exp2
+    float       start   = 0.0f;            // for linear
+    float       end     = 300.0f;          // for linear
+};
+
 struct SceneAsset {
     std::string                       name;
     CameraAsset                       camera;
@@ -153,6 +163,7 @@ struct SceneAsset {
     float3                            ambientColor     = float3(0, 0, 0);
     float                             ambientIntensity = 1.0f;
     SkyEnvironmentAsset               sky;
+    FogAsset                          fog;
     PostProcessingAsset               postProcessing;
     std::vector<AdditionalLightAsset> additionalLights;
     std::vector<ObjectAsset>          objects;
@@ -259,6 +270,16 @@ inline void from_json(const json& j, SkyEnvironmentAsset& e)
     e.valid = true;
 }
 
+inline void from_json(const json& j, FogAsset& f)
+{
+    f.enabled = j.value("enabled", false);
+    f.mode    = j.value("mode", "exp2");
+    if (j.contains("color")) f.color = ReadVec3(j["color"]);
+    f.density = j.value("density", 0.0f);
+    f.start   = j.value("start", 0.0f);
+    f.end     = j.value("end", 300.0f);
+}
+
 inline void from_json(const json& j, AdditionalLightAsset& a)
 {
     a.type           = j.value("type", "point");
@@ -281,6 +302,7 @@ inline void from_json(const json& j, SceneAsset& s)
         if (j["ambient"].contains("intensity")) s.ambientIntensity = j["ambient"]["intensity"];
     }
     if (j.contains("environment"))    j["environment"].get_to(s.sky);
+    if (j.contains("fog"))            j["fog"].get_to(s.fog);
     if (j.contains("postProcessing")) j["postProcessing"].get_to(s.postProcessing);
     if (j.contains("additionalLights")) {
         for (const auto& jl : j["additionalLights"]) {

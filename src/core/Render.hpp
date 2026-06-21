@@ -133,6 +133,18 @@ public:
         }
     }
 
+    void SetFog(const Fog& fog)
+    {
+        if (!fog.enabled) { gpu::_FOG_MODE = 0; return; }
+        gpu::_FOG_MODE = fog.mode;
+        gpu::unity_FogColor = float4(fog.color.x, fog.color.y, fog.color.z, 1.0f);
+        // unity_FogParams = (density/sqrt(ln2), density/ln2, -1/(end-start), end/(end-start)).
+        constexpr float kLn2 = 0.6931472f, kSqrtLn2 = 0.8325546f;
+        float denom = std::max(fog.end - fog.start, 1e-4f);
+        gpu::unity_FogParams = float4(fog.density / kSqrtLn2, fog.density / kLn2,
+                                      -1.0f / denom, fog.end / denom);
+    }
+
     void SetSH(const float sh[27])
     {
         std::copy(sh, sh + 27, gpu::_SH9);

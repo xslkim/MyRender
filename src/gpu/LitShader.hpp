@@ -79,9 +79,13 @@ namespace gpu
         }
         else
             inputData.bakedGI = _SH9_VALID
-                ? EvaluateAmbientProbe(half3(inputData.normalWS))
+                ? EvaluateAmbientProbe(half3(inputData.normalWS)) * _GI_SCALE
                 : _AmbientColor;
         inputData.normalizedScreenSpaceUV = GetNormalizedScreenSpaceUV(input.positionCS);
+
+        // Per-pixel fog factor from view-space depth (no-op when _FOG_MODE==0).
+        inputData.fogCoord = (half)InitializeInputDataFog(
+            float4(input.positionWS.x, input.positionWS.y, input.positionWS.z, 1.0f), 0);
 
         // Shadow coordinate: project world position into light clip space per-pixel.
         inputData.shadowCoord = _SHADOWS_ENABLED

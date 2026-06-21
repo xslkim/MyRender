@@ -260,11 +260,28 @@ namespace gpu
         return GetCurrentViewPosition() - positionWS;
     }
 
+    inline bool IsFogEnabled() { return _FOG_MODE != 0; }
+
+    // Unity fog factor (matches URP ComputeFogFactorZ0ToFar). For linear the result
+    // is the fog intensity directly (1=no fog … 0=full fog); for exp/exp2 it is the
+    // pre-scaled distance term that ComputeFogIntensity turns into intensity.
     real ComputeFogFactorZ0ToFar(float z)
     {
-        //float fogFactor = saturate(z * unity_FogParams.z + unity_FogParams.w);
-        //return real(fogFactor);
+        if (_FOG_MODE == 1)        // linear: saturate(z * (-1/(end-start)) + end/(end-start))
+            return real(saturate(z * unity_FogParams.z + unity_FogParams.w));
+        else if (_FOG_MODE == 2)   // exp:  exp2(-(density/ln2) * z)
+            return real(unity_FogParams.y * z);
+        else if (_FOG_MODE == 3)   // exp2: exp2(-((density/sqrt(ln2)) * z)^2)
+            return real(unity_FogParams.x * z);
         return 0;
+    }
+
+    half ComputeFogIntensity(half fogFactor)
+    {
+        if (_FOG_MODE == 1) return saturate(fogFactor);
+        else if (_FOG_MODE == 2) return saturate((half)exp2(-fogFactor));
+        else if (_FOG_MODE == 3) return saturate((half)exp2(-fogFactor * fogFactor));
+        return 1.0f;
     }
 
 #define UNITY_Z_0_FAR_FROM_CLIPSPACE(coord) max((coord - _ProjectionParams.y)/(-_ProjectionParams.z-_ProjectionParams.y)*_ProjectionParams.z, 0)
@@ -477,20 +494,23 @@ namespace gpu
         if (u < 0.0f || u > 1.0f || v < 0.0f || v > 1.0f)
             return half(1.0f);
 
-        // 3×3 PCF — sample 9 neighbours and average.
+        // 5×5 PCF — emulates Unity's soft directional shadows. The kernel half-width
+        // is _ShadowSoftnessTexels (in shadow-map texels); a wider kernel = softer
+        // penumbra. step spans [-half, +half] across the 5 taps per axis.
         float shadow = 0.0f;
         float texelSize = 1.0f / (float)kShadowRes;
-        for (int dy = -1; dy <= 1; ++dy) {
-            for (int dx = -1; dx <= 1; ++dx) {
-                int sx = (int)((u + dx * texelSize) * (kShadowRes - 1) + 0.5f);
-                int sy = (int)((v + dy * texelSize) * (kShadowRes - 1) + 0.5f);
+        float step = (_ShadowSoftnessTexels / 2.0f) * texelSize;  // 5 taps span ±half
+        for (int dy = -2; dy <= 2; ++dy) {
+            for (int dx = -2; dx <= 2; ++dx) {
+                int sx = (int)((u + dx * step) * (kShadowRes - 1) + 0.5f);
+                int sy = (int)((v + dy * step) * (kShadowRes - 1) + 0.5f);
                 sx = std::max(0, std::min(kShadowRes - 1, sx));
                 sy = std::max(0, std::min(kShadowRes - 1, sy));
                 float mapDepth = _ShadowDepth[sy * kShadowRes + sx];
                 shadow += (receiverDepth < mapDepth) ? 1.0f : 0.0f;
             }
         }
-        return half(shadow / 9.0f);
+        return half(shadow / 25.0f);
     }
 
     half MixRealtimeAndBakedShadows(half realtimeShadow, half bakedShadow, half shadowFade)
@@ -638,13 +658,11 @@ namespace gpu
 
     float3 MixFogColor(float3 fragColor, float3 fogColor, float fogFactor)
     {
-#if defined(FOG_LINEAR) || defined(FOG_EXP) || defined(FOG_EXP2)
         if (IsFogEnabled())
         {
-            float fogIntensity = ComputeFogIntensity(fogFactor);
+            float fogIntensity = ComputeFogIntensity((half)fogFactor);
             fragColor = lerp(fogColor, fragColor, fogIntensity);
         }
-#endif
         return fragColor;
     }
 

@@ -124,6 +124,7 @@ public:
         else
             Render::Get().ClearSH();
         Render::Get().SetAdditionalLights(_model.additionalLights);
+        Render::Get().SetFog(_model.fog);
 
         // View-frustum culling: skip objects whose world AABB is outside the
         // camera frustum. For a big scene (Garden: 4000 objects, most off-screen)
@@ -270,6 +271,9 @@ public:
         _camera.Position.z = _orbitRadius * std::cos(_orbitAngle);
         _camera.Rotation.y = _orbitAngle * (180.0f / PI) + _orbitRotYOffset;
     }
+
+    // Mutable access to the loaded model (e.g. CLI/env tuning overrides before Render).
+    SceneModel& Model() { return _model; }
 
 private:
     SceneModel _model;

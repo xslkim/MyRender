@@ -118,14 +118,19 @@ namespace gpu
     // Revisit when light units align with Unity's Lux convention.
     float       _LIGHTMAP_RGBM_MULT   = 4.5f;
     // Global direct-light scale (tuning; applies to main + additional light radiance).
-    // With the 1/π BRDF fix, lit surfaces were ~1.3x too bright; 0.5 (joint-swept
-    // with RGBM mult) gives the best overall match.
+    // Folds in the Lambert 1/π for *direct* light (BRDF.hpp no longer bakes 1/π into
+    // brdfData.diffuse, which is shared with indirect/ambient). Empirically 0.5 best
+    // matches the realtime Unity re-export (floor near-perfect, ambient cyan wall fixed).
     half        _DIRECT_LIGHT_SCALE   = 0.5f;
     // Global scale applied to sampled baked-GI radiance (tuning; Unity defaults to 1).
     half        _LIGHTMAP_INTENSITY   = 1.0f;
 
     // Flat fallback ambient (used when SH data is absent).
     half3 _AmbientColor = half3(0, 0, 0);
+    // Scale on SH-evaluated ambient/GI. Our raw SH evaluation comes out ~0.63× of
+    // Unity's diffuse ambient response (likely a probe-convolution/unit offset); 1.6
+    // empirically balances all channels on the realtime re-export (MSE 351→257).
+    half  _GI_SCALE = 1.6f;
 
     // L2 Spherical Harmonics ambient probe (A2).
     // Layout: sh[c*9 + i], c=0R/1G/2B, i=0..8 (L0+L1+L2 basis indices).
@@ -218,6 +223,7 @@ namespace gpu
     float4x4 _LightVP;                // light view-projection for shadow coord transform
     float*   _ShadowDepth = nullptr;  // pointer to kShadowRes² depth buffer in [0,1]
     float    _ShadowBias  = 0.002f;   // constant depth bias to prevent self-shadowing acne
+    float    _ShadowSoftnessTexels = 4.0f;  // 5×5 PCF kernel half-width (texels); larger=softer
     bool     _SHADOWS_ENABLED = false;
 
     // Spot light shadow map (index-0 spot only).
@@ -230,6 +236,10 @@ namespace gpu
     real _Cutoff;
     Color _EmissionColor;
     float4 unity_FogColor;
+    // Realtime fog (Unity RenderSettings.fog). Runtime-controlled, no shader macros.
+    //   _FOG_MODE: 0=off, 1=linear, 2=exp, 3=exp2(default in Unity).
+    //   unity_FogParams = (density/sqrt(ln2), density/ln2, -1/(end-start), end/(end-start)).
+    int   _FOG_MODE = 0;
 
     float2 _Tiling = Vec2f(1.0f, 1.0f);
     float2 _Offset = Vec2f(0, 0);
