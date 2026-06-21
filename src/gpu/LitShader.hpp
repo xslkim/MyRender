@@ -66,13 +66,15 @@ namespace gpu
         inputData.normalWS = NormalizeNormalPerPixel(inputData.normalWS);
         inputData.viewDirectionWS = viewDirWS;
         // Baked lightmap overrides SH/flat ambient when the object has one.
-        // Unity HDR lightmaps are RGBM-encoded: decode rgb * (alpha * multiplier) so
-        // the shader sees true linear radiance. Sampled with CLAMP wrap (baked atlases
-        // never repeat), via the dedicated clamp sampler.
+        // Unity HDR lightmaps are RGBM-encoded; decode rgb * (mult * alpha) here.
+        // (URP's reference uses alpha^2, but our light-unit pipeline matches the
+        //  linear-alpha form with mult=3.6 — see ShaderGlobal.hpp comment.)
+        // Sampled with CLAMP wrap (baked atlases never repeat).
         if (_LIGHTMAP && _Lightmap != nullptr) {
             float4 lm = _Lightmap->SamplerClamp(input.lightmapUV.x, input.lightmapUV.y);
+            float amul = _LIGHTMAP_RGBM_ALPHA2 ? (lm.a * lm.a) : lm.a;
             inputData.bakedGI = _LIGHTMAP_RGBM_DECODE
-                ? half3(lm.rgb * (lm.a * _LIGHTMAP_RGBM_MULT)) * _LIGHTMAP_INTENSITY
+                ? half3(lm.rgb * (amul * _LIGHTMAP_RGBM_MULT)) * _LIGHTMAP_INTENSITY
                 : half3(lm.rgb) * _LIGHTMAP_INTENSITY;
         }
         else

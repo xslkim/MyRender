@@ -109,11 +109,18 @@ namespace gpu
     // decode them. Newer exports pre-decode in the exporter; set this false then.
     // multiplier is unity_Lightmap_HDR.y (default 8 in URP).
     bool        _LIGHTMAP_RGBM_DECODE = true;
-    float       _LIGHTMAP_RGBM_MULT   = 3.6f; // tune: 8 (Unity default) over-bright; 3.6 matches this scene
+    // When true, decode as rgb * mult * alpha^2 (Unity URP Color.hlsl standard);
+    // when false, linear alpha rgb * mult * alpha. Toggle at runtime via env MR_ALPHA2.
+    bool        _LIGHTMAP_RGBM_ALPHA2 = false;
+    // RGBM decode multiplier (linear-alpha form). Unity URP default is 8 with alpha^2;
+    // our pipeline (raw color*intensity light, no pi-bake) empirically matches this
+    // scene with linear alpha + mult=4.5 (joint-swept against direct scale).
+    // Revisit when light units align with Unity's Lux convention.
+    float       _LIGHTMAP_RGBM_MULT   = 4.5f;
     // Global direct-light scale (tuning; applies to main + additional light radiance).
-    // With the 1/π BRDF fix in place, lit surfaces were ~1.3x too bright vs Unity ref;
-    // 0.7 brings floor multiplier from ~0.96 (R) down toward the ~0.67 target.
-    half        _DIRECT_LIGHT_SCALE   = 0.7f; // tune: with 1/π BRDF, lit surfaces ~1.3x bright; 0.7 best
+    // With the 1/π BRDF fix, lit surfaces were ~1.3x too bright; 0.5 (joint-swept
+    // with RGBM mult) gives the best overall match.
+    half        _DIRECT_LIGHT_SCALE   = 0.5f;
     // Global scale applied to sampled baked-GI radiance (tuning; Unity defaults to 1).
     half        _LIGHTMAP_INTENSITY   = 1.0f;
 

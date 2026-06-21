@@ -215,6 +215,11 @@ static void runCaptureUnity(const std::string& sceneDir, const std::string& outF
         gpu::_LIGHTMAP_INTENSITY = lightmapIntensity;
         printf("[lm] intensity = %.3f\n", lightmapIntensity);
     }
+    // Tuning overrides via env vars (for joint sweeps without recompiling):
+    //   MR_LM_MULT=<float>  MR_DIRECT=<float>  MR_ALPHA2=1
+    if (const char* m = std::getenv("MR_LM_MULT"))  { gpu::_LIGHTMAP_RGBM_MULT = (float)atof(m); printf("[lm] RGBM_MULT = %.3f\n", gpu::_LIGHTMAP_RGBM_MULT); }
+    if (const char* d = std::getenv("MR_DIRECT"))   { gpu::_DIRECT_LIGHT_SCALE = (half)atof(d);  printf("[lm] DIRECT_SCALE = %.3f\n", (float)gpu::_DIRECT_LIGHT_SCALE); }
+    if (const char* a = std::getenv("MR_ALPHA2"))   { gpu::_LIGHTMAP_RGBM_ALPHA2 = atoi(a) != 0; printf("[lm] RGBM_ALPHA2 = %d\n", (int)gpu::_LIGHTMAP_RGBM_ALPHA2); }
     if (animTime > 0.0f) scene.AdvanceAnimations(animTime);
     scene.Render();
     auto t2 = std::chrono::high_resolution_clock::now();
