@@ -3,6 +3,7 @@
 const { execSync } = require('child_process');
 const fs = require('fs');
 const path = require('path');
+const os = require('os');
 
 const CHROME = 'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe';
 const HTMLDIR = __dirname;                       // assets/_html
@@ -14,7 +15,7 @@ let ok = 0;
 names.forEach((name, idx) => {
   const html = path.join(HTMLDIR, name + '.html');
   const png  = path.join(OUTDIR, name + '.png');
-  const prof = path.join(OUTDIR, '..', '..', '..', 'out', '_cprof_' + idx); // out/_cprof_N
+  const prof = path.join(os.tmpdir(), 'mrslide_cprof_' + idx); // 系统临时目录，不污染仓库
   try { fs.unlinkSync(png); } catch (e) {}
   const cmd = `"${CHROME}" --headless=new --disable-gpu --no-sandbox --hide-scrollbars `
             + `--force-device-scale-factor=1 --user-data-dir="${prof}" `
