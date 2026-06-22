@@ -1,0 +1,63 @@
+/* 共享主题样式 —— 所有教学幻灯片用，渲染成 1920x1080 PNG */
+:root{
+  --bg:#0d1117; --fg:#e6edf3; --accent:#58a6ff; --muted:#8b949e;
+  --card:#161b22; --line:#30363d; --red:#ff7b72; --green:#3fb950;
+  --kw:#79c0ff; --str:#a5d6ff; --num:#d2a8ff;
+}
+*{box-sizing:border-box;}
+html,body{margin:0;padding:0;width:1920px;height:1080px;overflow:hidden;
+  background:var(--bg);color:var(--fg);
+  font-family:"Microsoft YaHei","Noto Sans SC","Segoe UI",sans-serif;}
+.slide{width:1920px;height:1080px;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;padding:70px 90px;}
+.center{align-items:center;justify-content:center;}
+.title{font-size:72px;font-weight:800;text-align:center;margin:0;}
+.subtitle{font-size:44px;color:var(--muted);text-align:center;margin-top:24px;}
+.bar{height:4px;background:var(--accent);margin-top:22px;border-radius:2px;}
+.sectionhead{font-size:40px;color:var(--accent);font-weight:700;margin:0 0 40px;}
+.muted{color:var(--muted);} .accent{color:var(--accent);} .red{color:var(--red);}
+.small{font-size:24px;color:var(--muted);}
+.foot{position:absolute;bottom:54px;left:0;right:0;text-align:center;font-size:24px;color:var(--muted);}
+
+/* 横向卡片行 */
+.row{display:flex;flex-direction:row;gap:44px;align-items:stretch;justify-content:center;width:100%;}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;
+  padding:34px;display:flex;flex-direction:column;}
+.card.hl{border:2px solid var(--accent);box-shadow:0 0 40px rgba(88,166,255,.25);}
+.card .tag{font-size:52px;font-weight:800;color:var(--accent);}
+.card .ct{font-size:38px;font-weight:700;margin-top:8px;}
+.card .cd{font-size:27px;color:var(--muted);margin-top:14px;line-height:1.55;}
+.icon{font-size:72px;line-height:1;}
+
+/* 流程图 */
+.flow{display:flex;flex-direction:row;align-items:center;justify-content:center;
+  gap:0;width:100%;flex-wrap:nowrap;}
+.node{background:var(--card);border:1px solid var(--line);border-radius:12px;
+  padding:0 26px;height:120px;display:flex;flex-direction:column;align-items:center;
+  justify-content:center;text-align:center;min-width:150px;}
+.node .nt{font-size:28px;font-weight:600;}
+.node .nd{font-size:22px;color:var(--muted);margin-top:6px;}
+.arrow{color:var(--accent);font-size:46px;padding:0 16px;flex:0 0 auto;}
+
+/* 代码窗口 */
+.codewin{width:88%;background:var(--card);border:1px solid var(--line);border-radius:14px;overflow:hidden;}
+.codebar{height:52px;display:flex;align-items:center;gap:10px;padding:0 20px;
+  border-bottom:1px solid var(--line);background:#0f141b;}
+.dot{width:14px;height:14px;border-radius:50%;}
+.codebar .fn{margin-left:14px;font-size:24px;color:var(--muted);}
+pre.code{margin:0;padding:30px 34px;font-size:26px;line-height:1.6;
+  font-family:"JetBrains Mono","Consolas","Menlo",monospace;white-space:pre;color:var(--fg);}
+.k{color:var(--kw);} .s{color:var(--str);} .n{color:var(--num);} .p{color:var(--muted);}
+
+/* 对比面板（嵌真实截图） */
+.panel{background:var(--card);border:1px solid var(--line);border-radius:14px;
+  padding:18px;display:flex;flex-direction:column;align-items:center;}
+.panel.hl{border:2px solid var(--accent);}
+.panel .pl{font-size:28px;margin-bottom:14px;}
+.panel img{width:100%;border-radius:8px;display:block;object-fit:cover;}
+.plus{font-size:64px;color:var(--muted);align-self:center;padding:0 8px;}
+
+/* 列表要点 */
+.bullets{display:flex;flex-direction:column;gap:20px;}
+.bullets .li{font-size:32px;display:flex;align-items:flex-start;gap:16px;}
+.ck{color:var(--accent);font-weight:800;} .cx{color:var(--red);font-weight:800;}

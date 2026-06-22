@@ -1,0 +1,7 @@
+<!doctype html><html><head><meta charset="utf-8"><link rel="stylesheet" href="style.css"></head><body><div class="slide">
+<div class="sectionhead">第四步之二：谁挡住了谁（深度缓冲）</div>
+<div style="position:relative;width:900px;height:480px">
+  <div style="position:absolute;left:110px;top:160px;width:430px;height:280px;background:rgba(110,118,129,.32);border:3px solid #6e7681;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:30px;color:#8b949e">远（距离大）</div>
+  <div style="position:absolute;left:360px;top:50px;width:430px;height:280px;background:rgba(88,166,255,.45);border:3px solid #58a6ff;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:30px">近（距离小）&#8594; 保留</div>
+</div>
+<div class="foot">每个像素记一个到相机的距离；新三角形比已有的近才覆盖，远的就被挡住不画。</div></div></body></html>

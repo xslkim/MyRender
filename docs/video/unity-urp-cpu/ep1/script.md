@@ -19,17 +19,10 @@
 >>> 这个系列要干什么 #B02
 @enter: fade
 @exit: fade
-@visual: animation
+@visual: image(../assets/slide_series_map.png)
 
 --- visual ---
-全屏深色背景 (#0d1117)，垂直居中布局，内容占画布约 88% 宽度。
-[0s] 顶部主标题 "从 Unity 导出到 CPU 软渲染" 淡入，白色 (#e6edf3)，粗体，字号 80px，居中。
-[0.5s] 主标题下方 28px 处副标题 "把 URP 一比一搬到 CPU，看懂渲染一帧的每一步"，颜色 #8b949e，字号 46px。
-[1s] 副标题下方 24px 处一条 4px 粗的 accent 色 (#58a6ff) 横线，从左到右扫入，宽度等于主标题。
-[1.6s] 下方两张大卡片横向等距排列，间距 48px，总宽占画布 90%，每张高 320px，圆角 16px，背景 #161b22，边框 1px solid #30363d，内边距 36px：
-  卡片1 顶部 "上集" 56px accent 色 + 标题 "导出与几何管线" 40px #e6edf3 + 三行描述 28px #8b949e："Unity 场景 → JSON+mesh" / "顶点变换 · 裁剪" / "光栅化 · 深度"
-  卡片2 顶部 "下集" 56px accent 色 + 标题 "光照阴影与成像" 40px #e6edf3 + 三行描述 28px #8b949e："材质 · PBR · 环境光" / "阴影 · 雾 · 色调" / "与 Unity 对账"
-卡片依次从下淡入上移，间隔 0.3s。第一张卡片有一圈 accent 色高亮边框表示"当前这一集"。
+（实际使用 ../assets/slide_series_map.png：系列两集卡片：上集(导出+几何，高亮) / 下集(光照阴影成像)。本图由 HTML 渲染生成，源文件 _html/slide_series_map.html）
 
 --- narration ---
 我们分成两集
@@ -47,24 +40,10 @@
 >>> 为什么要这么折腾 #B03
 @enter: fade-up
 @exit: fade
-@visual: animation
+@visual: image(../assets/slide_gpu_vs_cpu.png)
 
 --- visual ---
-全屏深色背景 (#0d1117)。左右两块对比面板，各占画布 44% 宽、高 560px，间距 56px，整体水平居中、垂直居中。
-左面板（GPU，封闭）：圆角 18px，背景 #14171c，边框 1px solid #30363d，整体略暗、opacity 0.92。
-  顶部一个 🔒 挂锁图标 72px，颜色 #6e7681（灰）。
-  其下标题 "GPU" 64px 粗体 #8b949e，再下一行小字 "渲染跑在显卡里" 26px #6e7681。
-  下方三行，每行前一个红色 (#ff7b72) ✗，文字 30px #8b949e，行距 22px：
-    "✗ 不能设断点" / "✗ 不能打印变量" / "✗ 出问题只能猜"
-右面板（CPU，敞开）：圆角 18px，背景 #161b22，边框 2px solid #58a6ff（accent 高亮），有轻微 accent 辉光。
-  顶部一个 🔍 放大镜图标 72px，accent 色 (#58a6ff)。
-  其下标题 "CPU" 64px 粗体 #e6edf3，再下一行小字 "管线搬到 C++ 一行行重写" 26px #8b949e。
-  下方三行，每行前一个 accent 色 ✓，文字 30px #e6edf3，行距 22px：
-    "✓ 随便设断点" / "✓ 随便打印" / "✓ 直接截图看见"
-[0s] 左面板 fade-up 淡入。
-[0.6s] 右面板从右侧 slide-left 滑入，accent 边框辉光亮起。
-[1.2s] 右面板三个 ✓ 自上而下依次弹入，间隔 0.25s。
-底部一行小字 24px #8b949e 居中："慢一点没关系——每个中间量都看得见，还能拿 Unity 当标准答案对照。"
+（实际使用 ../assets/slide_gpu_vs_cpu.png：GPU(封闭·锁) vs CPU(可调试·放大镜) 左右对比面板，✗/✓ 列表。本图由 HTML 渲染生成，源文件 _html/slide_gpu_vs_cpu.html）
 
 --- narration ---
 URP 的渲染跑在 **GPU** 上
@@ -82,17 +61,10 @@ URP 的渲染跑在 **GPU** 上
 >>> 端到端的数据流 #B04
 @enter: fade
 @exit: fade
-@visual: animation
+@visual: image(../assets/slide_dataflow.png)
 
 --- visual ---
-全屏深色背景 (#0d1117)。
-中央横向流程图，总宽占画布 94%，节点从左到右用 accent 色箭头连接，节点高 120px，圆角 12px，背景 #161b22，边框 1px solid #30363d，节点内文字 28px 白色：
-  "Unity 场景" → "C# 导出器" → "JSON + .mesh" → "C++ 加载器" → "渲染管线" → "一帧画面"
-"C# 导出器" 节点上方挂一个标签 24px #8b949e："Editor 扩展"；"渲染管线" 节点上方标签："顶点→裁剪→光栅化→着色"。
-最右 "一帧画面" 节点下方再画一条 accent 虚线指向一个小框 "对照 Unity 截图" 24px。
-[0s] 节点逐个从左淡入，间隔 0.3s，箭头跟着画出。
-[2.4s] 一个 accent 色高亮光点从 "Unity 场景" 流到 "一帧画面"，循环两次。
-底部一行小字 24px 颜色 #8b949e："上集走完整条链路的左半段（导出）和中段（几何）；下集讲右半段（着色）。"
+（实际使用 ../assets/slide_dataflow.png：端到端数据流：Unity 场景→C# 导出器→JSON+mesh→C++ 加载器→渲染管线→一帧画面。本图由 HTML 渲染生成，源文件 _html/slide_dataflow.html）
 
 --- narration ---
 整条链路就这么几步
@@ -150,21 +122,10 @@ C++ 这边的加载器把它们读进来
 >>> 场景写成一段 JSON #B07
 @enter: fade
 @exit: fade
-@visual: animation
+@visual: image(../assets/slide_scene_json.png)
 
 --- visual ---
-全屏深色背景 (#0d1117)。中央一个代码窗口，宽度占画布 88%，高度占画布 78%，圆角 14px，背景 #161b22，边框 1px solid #30363d，顶部有三个红黄绿圆点和文件名标签 "scene.json" 24px。
-窗口内等宽字体 26px，语法高亮（键名 #79c0ff，字符串 #a5d6ff，数字 #d2a8ff，标点 #8b949e），展示精简后的 JSON：
-  {
-    "coordinateSystem": "unity-lh-yup-zforward-meters",
-    "camera":    { "position": [2.32, 1.2, 3.3], "fovVertical": 60, "near": 0.3, "far": 1000 },
-    "mainLight": { "direction": [...], "color": [1, 0.90, 0.67], "intensity": 2 },
-    "environment": { "ambientMode": "skybox", "sh": [ ...27 个系数... ] },
-    "fog":       { "enabled": true, "mode": "exp2", "color": [...], "density": 0.05 },
-    "objects": [ { "name": "Drywall Panel", "mesh": "meshes/drywall_panel_15922.mesh", "material": {...} }, ... ]
-  }
-[0s] 代码窗口淡入。
-[1s] 用 accent 色高亮框依次扫过 "camera" / "mainLight" / "environment" / "fog" / "objects" 五个字段，每个停 0.8s，右侧浮出一个 24px 小标签说明它对应的渲染阶段。
+（实际使用 ../assets/slide_scene_json.png：scene.json 代码窗口，高亮相机/主光/环境光(球谐)/雾/物体五个字段。本图由 HTML 渲染生成，源文件 _html/slide_scene_json.html）
 
 --- narration ---
 JSON 长这样
@@ -201,16 +162,10 @@ mesh 文件负责"每个东西长什么样"
 >>> 较真：让 Unity 能当标准答案 #B09
 @enter: fade-up
 @exit: fade
-@visual: animation
+@visual: image(../assets/slide_align3.png)
 
 --- visual ---
-全屏深色背景 (#0d1117)。顶部居中标题 "三处必须对齐" 字号 58px 粗体 #e6edf3，距顶 70px。
-下方三张卡片横向等距排列，总宽占画布 92%，间距 40px，每张高 380px，圆角 16px，背景 #161b22，边框 1px solid #30363d，内边距 32px：
-  卡片1 图标 🧭 (72px) accent 色，标题 "坐标系" 38px，下方三行 26px #8b949e："左手系" / "Y 朝上，Z 朝前" / "单位：米"
-  卡片2 图标 📐 (72px) accent 色，标题 "矩阵约定" 38px，下方三行 26px："行/列主序" / "MVP 乘法顺序" / "投影 NDC 范围"
-  卡片3 图标 💡 (72px) accent 色，标题 "光照单位" 38px，下方三行 26px："光强 / 颜色空间" / "线性 vs sRGB" / "BRDF 归一化"
-卡片依次从下淡入上移，间隔 0.4s。
-底部小字 24px #8b949e："任何一处不一致，对照 Unity 就失去意义。"
+（实际使用 ../assets/slide_align3.png：三处必须对齐：坐标系 / 矩阵约定 / 光照单位，三张卡片。本图由 HTML 渲染生成，源文件 _html/slide_align3.html）
 
 --- narration ---
 要拿 Unity 当标准答案
@@ -229,17 +184,10 @@ mesh 文件负责"每个东西长什么样"
 >>> 数据进来了，开始走管线 #B10
 @enter: fade
 @exit: fade
-@visual: animation
+@visual: image(../assets/slide_geo_pipeline.png)
 
 --- visual ---
-全屏深色背景 (#0d1117)。
-上方一行小标题 "几何管线" 40px accent 色，距顶 70px。
-中央横向流程图，总宽占画布 92%，四个圆角矩形节点用 accent 色 (#58a6ff) 箭头连接，节点高 130px，圆角 12px，背景 #161b22，边框 1px solid #30363d，节点内文字 30px 白色：
-  "顶点变换" → "裁剪" → "光栅化" → "插值 + 深度"
-每个节点下方一行 24px #8b949e 小字：
-  "摆到屏幕坐标" / "切掉看不见的" / "铺成像素" / "填颜色·比远近"
-[0s] 节点逐个从左淡入，间隔 0.35s，箭头跟着画出。
-[2s] 一个 accent 高亮光点从左流到右，循环两次。
+（实际使用 ../assets/slide_geo_pipeline.png：几何管线四步流程图：顶点变换→裁剪→光栅化→插值+深度。本图由 HTML 渲染生成，源文件 _html/slide_geo_pipeline.html）
 
 --- narration ---
 数据已经从 Unity 进来了
@@ -256,16 +204,10 @@ mesh 文件负责"每个东西长什么样"
 >>> 第一步：把三角形摆到屏幕上 #B11
 @enter: fade-up
 @exit: fade
-@visual: animation
+@visual: image(../assets/slide_transform.png)
 
 --- visual ---
-全屏深色背景 (#0d1117)。横向四格"传送带"，总宽占画布 92%，每格上方一个标签 28px 白色，格内一个示意小图：
-  ① "模型自己的坐标" —— 一个小立方体居中
-  ② "摆进世界" —— 立方体移动到一个地面网格上的某处
-  ③ "换成相机视角" —— 出现一个相机图标，视线看向立方体
-  ④ "压成屏幕坐标" —— 立方体投影到一块矩形屏幕上
-[0s] 四格依次淡入，间隔 0.5s，一个立方体沿传送带从 ① 走到 ④，每到一格做对应变化。
-底部一行小字 26px #8b949e："和 Unity 里的 M / V / P 矩阵一一对应——只是我们看得见每一步结果。"
+（实际使用 ../assets/slide_transform.png：顶点变换四步：模型坐标→摆进世界(M)→相机视角(V)→压成屏幕(P)。本图由 HTML 渲染生成，源文件 _html/slide_transform.html）
 
 --- narration ---
 每个顶点要换四次"身份"
@@ -285,14 +227,10 @@ mesh 文件负责"每个东西长什么样"
 >>> 第二步：裁剪掉看不见的 #B12
 @enter: fade
 @exit: fade
-@visual: animation
+@visual: image(../assets/slide_clip.png)
 
 --- visual ---
-全屏深色背景 (#0d1117)。中央一个矩形代表屏幕边界（accent 色边框，占画布 60% 宽、70% 高）。
-[0s] 一个大三角形一部分在屏幕内、一部分伸到屏幕外。
-[1.5s] 沿屏幕边界把伸出去的部分"切掉"，三角形被裁成屏幕内的多边形，再自动拆成两三个小三角形（用不同浅色填充表示）。
-[3s] 屏幕外再飞进一个完全在背后的三角形，直接整块变灰消失。
-右上角一行标签 26px #8b949e："沿 7 个边界逐个裁——上下左右 + 远近 + 相机背后。"
+（实际使用 ../assets/slide_clip.png：裁剪示意：三角形跨屏幕边界被裁，蓝色=保留在屏幕内的部分。本图由 HTML 渲染生成，源文件 _html/slide_clip.html）
 
 --- narration ---
 不是所有三角形都该画
@@ -310,14 +248,10 @@ mesh 文件负责"每个东西长什么样"
 >>> 第三步：把三角形铺成像素 #B13
 @enter: fade
 @exit: fade
-@visual: animation
+@visual: image(./assets/B13.png)
 
 --- visual ---
-全屏深色背景 (#0d1117)。中央放大显示一个三角形覆盖在像素网格上（网格线 #30363d，格子约 40px）。
-[0s] 三角形外面套一个虚线矩形（它的"包围盒"），accent 色。
-[1s] 包围盒内的格子被逐行扫描点亮判定：在三角形内的格子填 accent 半透明色并标一个 ✓，外面的标 ✗ 变灰。
-[3s] 填充完成，三角形变成一块由方格拼成的实心区域。
-底部小字 26px #8b949e："只检查包围盒内的像素：在里面就填，在外面就跳过。"
+（实际使用 ../assets/slide_raster.png：光栅化：三角形覆盖像素网格，包围盒内逐像素判定，里面填、外面跳过。本图由 HTML 渲染生成，源文件 _html/slide_raster.html）
 
 --- narration ---
 光栅化就是把三角形"涂"成像素
@@ -359,14 +293,10 @@ mesh 文件负责"每个东西长什么样"
 >>> 第四步之二：谁挡住了谁 #B15
 @enter: fade
 @exit: fade
-@visual: animation
+@visual: image(../assets/slide_depth.png)
 
 --- visual ---
-全屏深色背景 (#0d1117)。中央两张半透明卡片前后交叠（一张近、一张远，accent 色与灰色区分），它们重叠的区域用问号标注。
-[0s] 两张卡片淡入，重叠区闪烁问号。
-[1.5s] 出现一个"深度尺"概念：每个像素记一个到相机的距离数字。重叠区比较两个距离，保留近的那张，远的那块变暗消失。
-[3s] 结果：近卡片完整挡住远卡片的重叠部分。
-底部小字 26px #8b949e："深度缓冲：每个像素只留离相机最近的那个。"
+（实际使用 ../assets/slide_depth.png：深度缓冲：近的卡片挡住远的卡片，每像素只留最近。本图由 HTML 渲染生成，源文件 _html/slide_depth.html）
 
 --- narration ---
 同一个像素
@@ -407,18 +337,10 @@ CPU 慢
 >>> 上集小结 · 下集预告 #B17
 @enter: fade-up
 @exit: fade
-@visual: animation
+@visual: image(../assets/slide_p1_recap.png)
 
 --- visual ---
-全屏深色背景 (#0d1117)，垂直居中。
-[0s] 顶部标题 "上集小结" 字号 60px 粗体 #e6edf3。
-[0.5s] 下方五行要点，每行前带 accent 色 ✓，字号 32px，行距 22px，左对齐居中块（块宽占画布 76%）：
-  ✓ 链路：Unity → 导出器 → JSON + mesh → 渲染
-  ✓ 坐标系 / 矩阵 / 光照单位三处对齐，Unity 才能当标准答案
-  ✓ 顶点变换：四步摆到屏幕坐标
-  ✓ 裁剪：切掉画面外和背后的
-  ✓ 光栅化 + 透视校正插值 + 深度遮挡
-[3s] 底部出现一张半透明的 ../assets/albedo.png 缩略图（宽 40% 画布，圆角 12px，opacity 0.5）作为背景点缀，上方叠加一行 accent 色文字 40px："下集 → 像素的颜色怎么算"。
+（实际使用 ../assets/slide_p1_recap.png：上集小结五要点 + "下集→像素的颜色怎么算" 预告。本图由 HTML 渲染生成，源文件 _html/slide_p1_recap.html）
 
 --- narration ---
 上集到这里

@@ -1,0 +1,27 @@
+<!doctype html><html><head><meta charset="utf-8"><link rel="stylesheet" href="style.css"></head><body><div class="slide">
+<div class="sectionhead">阴影的核心思路：两遍法</div>
+<div class="row">
+  <div class="card" style="width:720px;height:500px">
+    <div class="ct" style="color:var(--accent)">第一遍 · 站到太阳的位置</div>
+    <svg width="640" height="340" style="margin-top:18px">
+      <circle cx="90" cy="80" r="40" fill="#ffbd2e"/><text x="60" y="150" fill="#8b949e" font-size="24">太阳视角</text>
+      <line x1="130" y1="100" x2="320" y2="220" stroke="#58a6ff" stroke-width="3"/>
+      <line x1="130" y1="120" x2="320" y2="280" stroke="#58a6ff" stroke-width="3"/>
+      <rect x="320" y="200" width="150" height="120" fill="rgba(110,118,129,.4)" stroke="#6e7681" stroke-width="3"/>
+      <text x="330" y="190" fill="#e6edf3" font-size="24">记下每个方向</text>
+      <text x="330" y="170" fill="#e6edf3" font-size="24">最近的东西多远</text>
+    </svg>
+  </div>
+  <div class="card" style="width:720px;height:500px">
+    <div class="ct" style="color:var(--accent)">第二遍 · 着色时反问</div>
+    <svg width="640" height="340" style="margin-top:18px">
+      <circle cx="540" cy="60" r="34" fill="#ffbd2e"/>
+      <line x1="120" y1="300" x2="520" y2="80" stroke="#58a6ff" stroke-width="3" stroke-dasharray="8 6"/>
+      <rect x="300" y="150" width="120" height="100" fill="rgba(110,118,129,.5)" stroke="#6e7681" stroke-width="3"/>
+      <circle cx="120" cy="300" r="12" fill="#58a6ff"/>
+      <text x="60" y="330" fill="#e6edf3" font-size="24">这个像素</text>
+      <text x="150" y="200" fill="#ff7b72" font-size="24">中间被挡 → 在影子里</text>
+    </svg>
+  </div>
+</div>
+<div class="foot">第一遍从太阳眼里记一张"远近地图"；第二遍上色时问：我和太阳之间有没有东西挡着。</div></div></body></html>

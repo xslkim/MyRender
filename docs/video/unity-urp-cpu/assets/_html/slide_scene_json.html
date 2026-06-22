@@ -1,0 +1,13 @@
+<!doctype html><html><head><meta charset="utf-8"><link rel="stylesheet" href="style.css"></head><body><div class="slide">
+<div class="codewin">
+  <div class="codebar"><span class="dot" style="background:#ff5f56"></span><span class="dot" style="background:#ffbd2e"></span><span class="dot" style="background:#27c93f"></span><span class="fn">scene.json</span></div>
+<pre class="code"><span class="p">{</span>
+  <span class="k">"coordinateSystem"</span><span class="p">:</span> <span class="s">"unity-lh-yup-zforward-meters"</span><span class="p">,</span>
+  <span class="k">"camera"</span><span class="p">:</span>    <span class="p">{</span> <span class="k">"position"</span>:<span class="n">[2.32,1.2,3.3]</span>, <span class="k">"fovVertical"</span>:<span class="n">60</span>, <span class="k">"far"</span>:<span class="n">1000</span> <span class="p">},</span>
+  <span class="k">"mainLight"</span><span class="p">:</span> <span class="p">{</span> <span class="k">"direction"</span>:<span class="p">[...]</span>, <span class="k">"color"</span>:<span class="n">[1,0.90,0.67]</span>, <span class="k">"intensity"</span>:<span class="n">2</span> <span class="p">},</span>
+  <span class="k">"environment"</span><span class="p">:</span> <span class="p">{</span> <span class="k">"ambientMode"</span>:<span class="s">"skybox"</span>, <span class="k">"sh"</span>:<span class="p">[</span> ...27 个系数... <span class="p">]</span> <span class="p">},</span>
+  <span class="k">"fog"</span><span class="p">:</span>       <span class="p">{</span> <span class="k">"enabled"</span>:<span class="k">true</span>, <span class="k">"mode"</span>:<span class="s">"exp2"</span>, <span class="k">"density"</span>:<span class="n">0.05</span> <span class="p">},</span>
+  <span class="k">"objects"</span><span class="p">:</span> <span class="p">[</span> <span class="p">{</span> <span class="k">"name"</span>:<span class="s">"Drywall Panel"</span>, <span class="k">"mesh"</span>:<span class="s">"meshes/..."</span> <span class="p">},</span> ... <span class="p">]</span>
+<span class="p">}</span></pre>
+</div>
+<div class="foot">相机 · 主光 · 环境光(球谐) · 雾 · 物体——一份纯文本描述整个场景。</div></div></body></html>

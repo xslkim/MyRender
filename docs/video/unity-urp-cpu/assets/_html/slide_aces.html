@@ -1,0 +1,15 @@
+<!doctype html><html><head><meta charset="utf-8"><link rel="stylesheet" href="style.css"></head><body><div class="slide">
+<div class="sectionhead">色调映射：把过亮压回来（ACES）</div>
+<svg width="760" height="500">
+  <line x1="90" y1="430" x2="730" y2="430" stroke="#8b949e" stroke-width="2"/>
+  <line x1="90" y1="430" x2="90" y2="40" stroke="#8b949e" stroke-width="2"/>
+  <text x="300" y="475" fill="#8b949e" font-size="24">算出来的亮度（可以很大）</text>
+  <text x="30" y="240" fill="#8b949e" font-size="24" transform="rotate(-90 30,240)">屏幕亮度 0–1</text>
+  <path d="M90,430 C 250,430 320,120 730,90" fill="none" stroke="#58a6ff" stroke-width="5"/>
+  <line x1="600" y1="430" x2="600" y2="105" stroke="#ff7b72" stroke-width="2" stroke-dasharray="6 6"/>
+  <line x1="90" y1="105" x2="600" y2="105" stroke="#ff7b72" stroke-width="2" stroke-dasharray="6 6"/>
+  <circle cx="600" cy="105" r="8" fill="#58a6ff"/>
+  <text x="430" y="415" fill="#ff7b72" font-size="22">很亮的输入</text>
+  <text x="120" y="95" fill="#3fb950" font-size="22">被柔和压回可显示范围</text>
+</svg>
+<div class="foot">不压，亮处一片死白；用这条 S 曲线把过亮柔和压回，亮处保留层次。这套叫 ACES，电影常用。</div></div></body></html>

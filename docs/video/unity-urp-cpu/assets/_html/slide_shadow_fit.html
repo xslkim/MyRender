@@ -1,0 +1,13 @@
+<!doctype html><html><head><meta charset="utf-8"><link rel="stylesheet" href="style.css"></head><body><div class="slide">
+<div class="sectionhead">把"太阳的视野"框住整个场景</div>
+<svg width="1000" height="520">
+  <circle cx="120" cy="90" r="40" fill="#ffbd2e"/><text x="80" y="160" fill="#8b949e" font-size="24">平行光</text>
+  <g stroke="#ffbd2e" stroke-width="2" opacity=".5">
+    <line x1="150" y1="120" x2="420" y2="300"/><line x1="160" y1="100" x2="700" y2="180"/><line x1="155" y1="140" x2="500" y2="430"/></g>
+  <rect x="400" y="170" width="430" height="270" fill="none" stroke="#58a6ff" stroke-width="3"/>
+  <g stroke="#30363d" stroke-width="1">
+    <line x1="400" y1="260" x2="830" y2="260"/><line x1="400" y1="350" x2="830" y2="350"/>
+    <line x1="500" y1="170" x2="500" y2="440"/><line x1="615" y1="170" x2="615" y2="440"/><line x1="730" y1="170" x2="730" y2="440"/></g>
+  <text x="430" y="200" fill="#e6edf3" font-size="24">正交取景框 = 一张阴影深度图</text>
+</svg>
+<div class="foot">平行光用正交方框套住场景渲一张深度图。本场景小，一张够用；超大场景才需分成好几级。</div></div></body></html>

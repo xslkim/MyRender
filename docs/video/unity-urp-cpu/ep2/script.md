@@ -23,14 +23,10 @@
 >>> 材质的两张关键贴图 #B02
 @enter: fade
 @exit: fade
-@visual: animation
+@visual: image(../assets/slide_materials.png)
 
 --- visual ---
-全屏深色背景 (#0d1117)。左右两块，每块占画布 44% 宽，圆角 14px，背景 #161b22，边框 1px solid #30363d，内部上方放一张示意缩略图、下方一行标签。
-  左：标签 "基础色贴图 (albedo)" 32px 白色，缩略图用 ../assets/albedo.png；下方 24px #8b949e "这块表面本来是什么颜色"
-  右：标签 "法线贴图 (normal)" 32px 白色，缩略图用 ../assets/normal_mapped.png；下方 24px #8b949e "表面凹凸的朝向细节"
-[0s] 两块依次淡入，间隔 0.5s。
-[1.5s] 中间出现一个加号和等号，示意"基础色 + 朝向 = 有立体感的表面"。
+（实际使用 ../assets/slide_materials.png：材质两张贴图面板：基础色 albedo + 法线 normal。本图由 HTML 渲染生成，源文件 _html/slide_materials.html）
 
 --- narration ---
 一个 URP 材质
@@ -137,15 +133,10 @@
 >>> 一个真实的 bug：环境光暗了三倍 #B07
 @enter: fade-up
 @exit: fade
-@visual: animation
+@visual: image(../assets/slide_bug.png)
 
 --- visual ---
-全屏深色背景 (#0d1117)。横向三格对比，总宽占画布 94%，每格上方一个标签 28px，格内放对应截图（统一裁剪到青色墙区域）：
-  ① 标签 "灭灯：纯黑" —— 用 ../assets/lights_off.png（裁到青墙区域，几乎全黑）
-  ② 标签 "有 bug：墙发黑" 红色 (#ff7b72) —— 用 ../assets/cyan_bug_crop.png
-  ③ 标签 "修复后：恢复青色" accent 色 —— 用 ../assets/cyan_fixed_crop.png
-[0s] 三格依次淡入，间隔 0.6s。
-[2s] 在 ② 和 ③ 之间画一个 accent 箭头，旁注 24px #8b949e："同一个亮度系数，被错误地除了两次。"
+（实际使用 ../assets/slide_bug.png：1/π bug 三联：①灭灯纯黑 ②有bug墙发黑(红) ③修复恢复青色。本图由 HTML 渲染生成，源文件 _html/slide_bug.html）
 
 --- narration ---
 讲个我真实踩到的坑
@@ -192,15 +183,10 @@
 >>> 找不同：有没有影子 #B09
 @enter: fade-up
 @exit: fade
-@visual: animation
+@visual: image(../assets/slide_shadow_diff.png)
 
 --- visual ---
-全屏深色背景 (#0d1117)。左右并排两张图，各占画布 47% 宽，圆角 12px，中间 8px 间隙：
-  左：../assets/shadow_off.png，上方标签 "没有阴影" 28px #8b949e
-  右：../assets/final.png，上方标签 "有阴影" 28px accent 色
-[0s] 两张同时淡入。
-[1.2s] 在右图工作台脚下、工具下方的阴影处，画几个 accent 色圈圈点出"多了影子"的位置。
-底部小字 26px #8b949e："没有影子，物体像浮在地上；有了影子，才落到地面上。"
+（实际使用 ../assets/slide_shadow_diff.png：找不同：没有阴影 vs 有阴影 两图并排。本图由 HTML 渲染生成，源文件 _html/slide_shadow_diff.html）
 
 --- narration ---
 对
@@ -219,14 +205,10 @@
 >>> 阴影的核心思路 #B10
 @enter: fade
 @exit: fade
-@visual: animation
+@visual: image(../assets/slide_shadow_idea.png)
 
 --- visual ---
-全屏深色背景 (#0d1117)。
-[0s] 左侧画一个太阳图标，从太阳向场景发出平行光线（accent 色细箭头）。
-[1s] 镜头切到"从太阳的眼睛看出去"：屏幕显示太阳视角看到的场景轮廓，旁注 28px "第一遍：站在太阳的位置，记下每个方向最近的东西有多远"。
-[2.5s] 镜头切回相机视角，对一个地面像素引一条线指向太阳，线中途撞到工作台。旁注 28px "第二遍：着色时反问——我和太阳之间，有没有东西挡着？"
-[4s] 撞到了 → 该像素标记为"在影子里"变暗；没撞到 → 标记"被照到"。
+（实际使用 ../assets/slide_shadow_idea.png：阴影两遍法：第一遍从太阳视角记远近 / 第二遍着色时查遮挡。本图由 HTML 渲染生成，源文件 _html/slide_shadow_idea.html）
 
 --- narration ---
 阴影的思路其实很直白
@@ -251,13 +233,10 @@
 >>> 把"太阳的视野"框住场景 #B11
 @enter: fade-up
 @exit: fade
-@visual: animation
+@visual: image(../assets/slide_shadow_fit.png)
 
 --- visual ---
-全屏深色背景 (#0d1117)。中央一个等距视角的场景包围盒（线框长方体，accent 色），太阳在一侧。
-[0s] 太阳发出平行光，一个正交的"取景框"（accent 半透明方框）从太阳方向套住整个包围盒。
-[1.5s] 取景框被一张方形网格填充，代表"阴影图"——分辨率有限，格子可见。
-[3s] 旁注两行 24px #8b949e："一张图覆盖整个场景 → 太大就糊。" / "本场景够小，一张就行；超大场景才需要分级。"
+（实际使用 ../assets/slide_shadow_fit.png：正交取景框套住整个场景，渲一张阴影深度图。本图由 HTML 渲染生成，源文件 _html/slide_shadow_fit.html）
 
 --- narration ---
 太阳是平行光
@@ -279,14 +258,10 @@
 >>> 硬边变软边：PCF #B12
 @enter: fade
 @exit: fade
-@visual: animation
+@visual: image(../assets/slide_pcf.png)
 
 --- visual ---
-全屏深色背景 (#0d1117)。左右并排两张裁剪图（工作台脚下的地面阴影边缘），各占画布 44% 宽，圆角 12px：
-  左：../assets/shadow_hard_crop.png，标签 "只采样一次 → 硬、带锯齿" 26px #8b949e
-  右：../assets/shadow_soft_crop.png，标签 "采样一小片再平均 → 软" 26px accent 色
-[0s] 两图淡入。
-[1.5s] 在左图边缘叠一排放大的锯齿状方块示意"非黑即白"；在右图边缘叠一个柔和渐变条示意"中间有过渡"。
+（实际使用 ../assets/slide_pcf.png：硬阴影(采样一次) vs PCF 软阴影(采样一小片平均) 边缘对比。本图由 HTML 渲染生成，源文件 _html/slide_pcf.html）
 
 --- narration ---
 但只查一个点
@@ -329,11 +304,10 @@
 >>> 顺带一提：自己挡自己 #B14
 @enter: fade
 @exit: fade
-@visual: animation
+@visual: image(../assets/slide_bias.png)
 
 --- visual ---
-全屏深色背景 (#0d1117)。中央一个被光照射的斜面，表面布满细密的黑色斑点（"阴影痤疮"），标签 28px 红色 (#ff7b72) "没修正：表面自己在自己身上投影"。
-[1.5s] 加一个小小的"抬一点点"的偏移动作，斑点消失，表面干净。标签变 accent 色 "加一点深度偏移 → 干净了"。
+（实际使用 ../assets/slide_bias.png：阴影痤疮：表面自己挡自己冒黑斑 → 加一点深度偏移修复。本图由 HTML 渲染生成，源文件 _html/slide_bias.html）
 
 --- narration ---
 还有个常见小毛病
@@ -351,14 +325,10 @@
 >>> 最后一块拼图：雾 #B15
 @enter: fade-up
 @exit: fade
-@visual: animation
+@visual: image(../assets/slide_fog_hook.png)
 
 --- visual ---
-全屏深色背景 (#0d1117)。左右并排两张图，各占画布 47% 宽，圆角 12px，中间 8px 间隙：
-  左：../assets/fog_off.png，上方标签 "还差点什么" 28px #8b949e
-  右：../assets/final.png，上方标签 "加上雾之后" 28px accent 色
-[0s] 两张淡入。
-[1.2s] 在右图远处的墙和地平线处画 accent 色圈，点出"远处蒙了一层薄雾、天地交界更柔和"。
+（实际使用 ../assets/slide_fog_hook.png：找不同：没有雾 vs 有雾 两图并排。本图由 HTML 渲染生成，源文件 _html/slide_fog_hook.html）
 
 --- narration ---
 光照和阴影都齐了
@@ -378,13 +348,10 @@ Unity 那边
 >>> 雾：远处褪向雾色 #B16
 @enter: fade
 @exit: fade
-@visual: animation
+@visual: image(../assets/slide_fog.png)
 
 --- visual ---
-全屏深色背景 (#0d1117)。中央一条从相机伸向远方的走廊示意图，地面网格向远处收缩。
-[0s] 近处物体颜色饱满。
-[1.5s] 越往远，物体颜色逐渐混入一层灰蓝"雾色"，最远处几乎只剩雾色。
-[3s] 一条标尺从近到远，旁注 28px "离相机越远，混入的雾越多"。底部小字 24px #8b949e："雾的模式、颜色、浓度都从 Unity 导出，写在 JSON 里。"
+（实际使用 ../assets/slide_fog.png：雾按距离褪向雾色的示意（近饱满→远只剩雾色）。本图由 HTML 渲染生成，源文件 _html/slide_fog.html）
 
 --- narration ---
 雾的规则很朴素
@@ -404,13 +371,10 @@ Unity 那边
 >>> 色调映射：把过亮压回来 #B17
 @enter: fade-up
 @exit: fade
-@visual: animation
+@visual: image(../assets/slide_aces.png)
 
 --- visual ---
-全屏深色背景 (#0d1117)。中央一条平滑的 S 形曲线（accent 色），横轴标签 "算出来的亮度（可以很大）"，纵轴标签 "屏幕能显示的亮度（0–1）"，坐标轴 26px #8b949e。
-[0s] 曲线画出。
-[1s] 横轴上一个很亮的点（远超 1）通过曲线被"压"回纵轴 0–1 范围内，用 accent 高亮这条投影路径。
-[2.5s] 旁边对比两个小球：一个"没压→过曝死白"，一个"压过→保留层次"。底部小字 24px #8b949e："这条曲线叫 ACES，电影级的观感。"
+（实际使用 ../assets/slide_aces.png：ACES 色调映射 S 曲线：把过亮输入柔和压回 0–1。本图由 HTML 渲染生成，源文件 _html/slide_aces.html）
 
 --- narration ---
 渲染时算出来的亮度
