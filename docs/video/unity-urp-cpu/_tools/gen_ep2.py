@@ -6,21 +6,23 @@ S={}
 def panel(img,label,cls='',w=820):
     return ('<div class="panel '+cls+'" style="width:%dpx"><div class="pl">'%w)+label+'</div><img src="'+img+'"></div>'
 
+# 渲染器真实截图现位于 ep2/assets/（从 _tools/ 看进去是 ../ep2/assets/）
+IMG='../ep2/assets/'
 S['slide_materials']='<div class="slide"><div class="sectionhead">材质的两张关键贴图</div>'\
- +'<div class="row" style="align-items:center">'+panel('../albedo.png','基础色贴图 (albedo)','',760)\
- +'<div class="plus">+</div>'+panel('../normal_mapped.png','法线贴图 (normal)','',760)+'</div>'\
+ +'<div class="row" style="align-items:center">'+panel(IMG+'albedo.png','基础色贴图 (albedo)','',760)\
+ +'<div class="plus">+</div>'+panel(IMG+'normal_mapped.png','法线贴图 (normal)','',760)+'</div>'\
  +'<div class="foot">基础色 = 这块表面本来什么颜色；法线 = 表面凹凸的朝向细节。两者合起来才有立体感。</div></div>'
 
-S['slide_bug']='<div class="slide"><div class="sectionhead" style="font-size:50px">一个真实的 bug：环境光暗了三倍</div>'\
+S['slide_bug']='<div class="slide"><div class="sectionhead" style="font-size:50px">一个真实的 bug：环境光暗了约 π 倍</div>'\
  +'<div class="row" style="align-items:flex-end">'\
- +panel('../lights_off.png','① 灭灯：纯黑','',560)\
- +'<div class="panel" style="width:380px"><div class="pl red">② 有 bug：墙发黑</div><img src="../cyan_bug_crop.png" style="height:380px;width:auto"></div>'\
+ +panel(IMG+'lights_off.png','① 灭灯：纯黑','',560)\
+ +'<div class="panel" style="width:380px"><div class="pl red">② 有 bug：墙发黑</div><img src="'+IMG+'cyan_bug_crop.png" style="height:380px;width:auto"></div>'\
  +'<div class="plus accent">&#8594;</div>'\
- +'<div class="panel hl" style="width:380px"><div class="pl accent">③ 修复后：恢复青色</div><img src="../cyan_fixed_crop.png" style="height:380px;width:auto"></div>'\
- +'</div><div class="foot">同一个归一化亮度系数，被直接光和环境光共用；直接光有补偿、环境光没有 → 平白暗了约 3 倍。</div></div>'
+ +'<div class="panel hl" style="width:380px"><div class="pl accent">③ 修复后：恢复冷青色</div><img src="'+IMG+'cyan_fixed_crop.png" style="height:380px;width:auto"></div>'\
+ +'</div><div class="foot">同一个归一化亮度系数（1/π），被直接光和环境光共用；直接光有补偿、环境光没有 → 平白暗了约 π 倍（≈3 倍）。</div></div>'
 
 S['slide_shadow_diff']='<div class="slide"><div class="sectionhead">找不同：有没有影子</div>'\
- +'<div class="row">'+panel('../shadow_off.png','没有阴影','',820)+panel('../final.png','有阴影','hl',820)+'</div>'\
+ +'<div class="row">'+panel(IMG+'shadow_off.png','没有阴影','',820)+panel(IMG+'final.png','有阴影','hl',820)+'</div>'\
  +'<div class="foot">没有影子，物体像浮在地上；有了影子，工作台和工具才真正"落"到地面上。</div></div>'
 
 S['slide_shadow_idea']='''<div class="slide">
@@ -67,8 +69,8 @@ S['slide_shadow_fit']='''<div class="slide">
 
 S['slide_pcf']='<div class="slide"><div class="sectionhead">硬边变软边：PCF</div>'\
  +'<div class="row">'\
- +'<div class="panel" style="width:740px"><div class="pl">只采样一次 → 硬、带锯齿</div><img src="../shadow_hard_crop.png"></div>'\
- +'<div class="panel hl" style="width:740px"><div class="pl accent">采样一小片再平均 → 软</div><img src="../shadow_soft_crop.png"></div>'\
+ +'<div class="panel" style="width:740px"><div class="pl">只采样一次 → 硬、带锯齿</div><img src="'+IMG+'shadow_hard_crop.png"></div>'\
+ +'<div class="panel hl" style="width:740px"><div class="pl accent">采样一小片再平均 → 软</div><img src="'+IMG+'shadow_soft_crop.png"></div>'\
  +'</div><div class="foot">查一个点，影子边非黑即白；查周围一小片按比例平均，边缘就柔和了。</div></div>'
 
 S['slide_bias']='''<div class="slide">
@@ -90,7 +92,7 @@ S['slide_bias']='''<div class="slide">
 <div class="foot">深度图精度有限，平面会误判成自己挡自己；判断时把深度往光的方向抬一点点，留出容差即可。</div></div>'''
 
 S['slide_fog_hook']='<div class="slide"><div class="sectionhead">最后一块拼图：雾</div>'\
- +'<div class="row">'+panel('../fog_off.png','没有雾','',820)+panel('../final.png','加上雾之后','hl',820)+'</div>'\
+ +'<div class="row">'+panel(IMG+'fog_off.png','没有雾','',820)+panel(IMG+'final.png','加上雾之后','hl',820)+'</div>'\
  +'<div class="foot">和 Unity 一比，远处的墙、天地交界，那边蒙着一层淡淡的雾。把雾、色调、天空盒补齐再对账。</div></div>'
 
 S['slide_fog']='''<div class="slide">

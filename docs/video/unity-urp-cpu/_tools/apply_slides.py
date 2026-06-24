@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# 把 script.md 里指定 #id 的 @visual:animation 块替换为 @visual:image(../assets/slide.png)，
+# 把 script.md 里指定 #id 的 @visual:animation 块替换为 @visual:image(./assets/slide.png)，
 # 旁白(narration)原样保留，visual 段换成一行文档说明。
 import re, io
 
@@ -19,7 +19,7 @@ MAP = {
  },
  'ep2': {
   'B02':('slide_materials','材质两张贴图面板：基础色 albedo + 法线 normal'),
-  'B07':('slide_bug','1/π bug 三联：①灭灯纯黑 ②有bug墙发黑(红) ③修复恢复青色'),
+  'B07':('slide_bug','1/π bug 三联：①灭灯纯黑 ②有bug墙发黑(红) ③修复后恢复冷青色'),
   'B09':('slide_shadow_diff','找不同：没有阴影 vs 有阴影 两图并排'),
   'B10':('slide_shadow_idea','阴影两遍法：第一遍从太阳视角记远近 / 第二遍着色时查遮挡'),
   'B11':('slide_shadow_fit','正交取景框套住整个场景，渲一张阴影深度图'),
@@ -32,7 +32,7 @@ MAP = {
 }
 
 for ep,bm in MAP.items():
-    path='../../%s/script.md'%ep
+    path='../%s/script.md'%ep                      # 本脚本在 _tools/，工程目录在其上一级
     txt=open(path,encoding='utf-8').read()
     # split into blocks keeping the '>>> ' delimiter
     parts=re.split(r'(?=^>>> )', txt, flags=re.M)
@@ -42,9 +42,9 @@ for ep,bm in MAP.items():
         if m and m.group(1) in bm:
             slide,desc=bm[m.group(1)]
             # replace @visual line
-            blk=re.sub(r'@visual:\s*animation', '@visual: image(../assets/%s.png)'%slide, blk, count=1)
+            blk=re.sub(r'@visual:\s*animation', '@visual: image(./assets/%s.png)'%slide, blk, count=1)
             # replace the visual body (between '--- visual ---' and '--- narration ---')
-            doc='（实际使用 ../assets/%s.png：%s。本图由 HTML 渲染生成，源文件 _html/%s.html）'%(slide,desc,slide)
+            doc='（实际使用 ./assets/%s.png：%s。本图由 HTML 渲染生成，源文件 _tools/%s.html）'%(slide,desc,slide)
             blk=re.sub(r'(--- visual ---\n).*?(\n--- narration ---)',
                        lambda mm: mm.group(1)+doc+mm.group(2), blk, count=1, flags=re.S)
         out.append(blk)

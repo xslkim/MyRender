@@ -1,10 +1,10 @@
 >>> 上集回顾 · 本集目标 #B01
 @enter: fade-up
 @exit: fade
-@visual: image(../assets/albedo.png)
+@visual: image(./assets/albedo.png)
 
 --- visual ---
-（实际使用 ../assets/albedo.png：只有材质基础色、没有任何光照的画面，颜色平、扁，像素已成形但"素颜"。）
+（实际使用 ./assets/albedo.png：只有材质基础色、没有任何光照的画面，颜色平、扁，像素已成形但"素颜"。）
 
 --- narration ---
 上集结束时
@@ -23,10 +23,10 @@
 >>> 材质的两张关键贴图 #B02
 @enter: fade
 @exit: fade
-@visual: image(../assets/slide_materials.png)
+@visual: image(./assets/slide_materials.png)
 
 --- visual ---
-（实际使用 ../assets/slide_materials.png：材质两张贴图面板：基础色 albedo + 法线 normal。本图由 HTML 渲染生成，源文件 _html/slide_materials.html）
+（实际使用 ./assets/slide_materials.png：材质两张贴图面板：基础色 albedo + 法线 normal。本图由 HTML 渲染生成，源文件 _tools/slide_materials.html）
 
 --- narration ---
 一个 URP 材质
@@ -43,10 +43,10 @@
 >>> 法线：表面朝哪边 #B03
 @enter: fade-up
 @exit: fade
-@visual: image(../assets/normal_mapped.png)
+@visual: image(./assets/normal_mapped.png)
 
 --- visual ---
-（实际使用 ../assets/normal_mapped.png：把每个像素的表面朝向编码成颜色显示，墙面、地面、工具表面呈现不同的法线色块和细节。）
+（实际使用 ./assets/normal_mapped.png：把每个像素的表面朝向编码成颜色显示，墙面、地面、工具表面呈现不同的法线色块和细节。）
 
 --- narration ---
 这张图
@@ -64,10 +64,10 @@
 >>> 直接光：太阳和射灯 #B04
 @enter: fade
 @exit: fade
-@visual: image(../assets/direct_only.png)
+@visual: image(./assets/direct_only.png)
 
 --- visual ---
-（实际使用 ../assets/direct_only.png：只保留直接光、关掉环境光的画面——受光面明亮偏暖，背光面很暗甚至发黑，对比强烈。）
+（实际使用 ./assets/direct_only.png：只保留直接光、关掉环境光的画面——受光面明亮偏暖，背光面很暗甚至发黑，对比强烈。）
 
 --- narration ---
 这是只留 **直接光** 的样子
@@ -87,10 +87,10 @@
 >>> 但背光的地方为什么不是全黑 #B05
 @enter: fade-up
 @exit: fade
-@visual: image(../assets/ambient_only.png)
+@visual: image(./assets/ambient_only.png)
 
 --- visual ---
-（实际使用 ../assets/ambient_only.png：只保留环境光的画面——整体柔和、偏冷蓝，没有硬阴影，背光处也有亮度，青色墙泛蓝。）
+（实际使用 ./assets/ambient_only.png：只保留环境光的画面——整体柔和、偏冷蓝，没有硬阴影，背光处也有亮度，背光的那面墙被天空照得泛冷青色。）
 
 --- narration ---
 回头看刚才那张
@@ -103,17 +103,18 @@
 这张图就是只留环境光的样子
 柔和、偏蓝
 正是天空的颜色
-注意那面青色的墙
-被天空照得泛蓝
+注意那面背光的墙
+本该是白的
+被天空照得泛出冷青色
 
 
 >>> 环境光怎么存：球谐 #B06
 @enter: fade
 @exit: fade
-@visual: image(../assets/ambient_sh.png)
+@visual: image(./assets/ambient_sh.png)
 
 --- visual ---
-（实际使用 ../assets/ambient_sh.png：环境光（球谐）单独可视化，整个场景被一层来自天空的柔光笼罩。）
+（实际使用 ./assets/ambient_sh.png：环境光（球谐）单独可视化，整个场景被一层来自天空的柔光笼罩。）
 
 --- narration ---
 天空各个方向的光
@@ -130,30 +131,33 @@
 写进了 JSON
 
 
->>> 一个真实的 bug：环境光暗了三倍 #B07
+>>> 一个真实的 bug：环境光暗了约 π 倍 #B07
 @enter: fade-up
 @exit: fade
-@visual: image(../assets/slide_bug.png)
+@visual: image(./assets/slide_bug.png)
 
 --- visual ---
-（实际使用 ../assets/slide_bug.png：1/π bug 三联：①灭灯纯黑 ②有bug墙发黑(红) ③修复恢复青色。本图由 HTML 渲染生成，源文件 _html/slide_bug.html）
+（实际使用 ./assets/slide_bug.png：1/π bug 三联：①灭灯纯黑 ②有bug墙发黑(红) ③修复后恢复冷青色。本图由 HTML 渲染生成，源文件 _tools/slide_bug.html）
 
 --- narration ---
 讲个我真实踩到的坑
-那面青色的墙是背光的
-全靠环境光照亮
+那面墙是背光的
+它本是白色
+被天空的环境光
+照出一点 **冷青色**
+全靠这点环境光
 可一开始
 它发黑、发灰
-青色都快没了
+那点青色都快没了
 在 CPU 上排查很方便
 我直接打印中间值
 发现一个用来归一化的亮度系数
 被同时用在了直接光和环境光上
 直接光那边有别的地方补偿回来了
 环境光这边没有
-等于平白被除暗了大概三倍
+等于平白被除暗了 **约 π 倍**
 把它从环境光的路径上拿掉
-青色墙立刻就回来了
+那点冷青色立刻就回来了
 这种 bug
 在 GPU 上你只能干瞪眼
 
@@ -161,10 +165,10 @@
 >>> 合成：基础色 × 光 #B08
 @enter: fade
 @exit: fade
-@visual: image(../assets/final.png)
+@visual: image(./assets/final.png)
 
 --- visual ---
-（实际使用 ../assets/final.png：最终上色后的完整画面，直接光 + 环境光 + 材质全部合成。）
+（实际使用 ./assets/final.png：最终上色后的完整画面，直接光 + 环境光 + 材质全部合成。）
 
 --- narration ---
 把这些加起来
@@ -183,10 +187,10 @@
 >>> 找不同：有没有影子 #B09
 @enter: fade-up
 @exit: fade
-@visual: image(../assets/slide_shadow_diff.png)
+@visual: image(./assets/slide_shadow_diff.png)
 
 --- visual ---
-（实际使用 ../assets/slide_shadow_diff.png：找不同：没有阴影 vs 有阴影 两图并排。本图由 HTML 渲染生成，源文件 _html/slide_shadow_diff.html）
+（实际使用 ./assets/slide_shadow_diff.png：找不同：没有阴影 vs 有阴影 两图并排。本图由 HTML 渲染生成，源文件 _tools/slide_shadow_diff.html）
 
 --- narration ---
 对
@@ -205,10 +209,10 @@
 >>> 阴影的核心思路 #B10
 @enter: fade
 @exit: fade
-@visual: image(../assets/slide_shadow_idea.png)
+@visual: image(./assets/slide_shadow_idea.png)
 
 --- visual ---
-（实际使用 ../assets/slide_shadow_idea.png：阴影两遍法：第一遍从太阳视角记远近 / 第二遍着色时查遮挡。本图由 HTML 渲染生成，源文件 _html/slide_shadow_idea.html）
+（实际使用 ./assets/slide_shadow_idea.png：阴影两遍法：第一遍从太阳视角记远近 / 第二遍着色时查遮挡。本图由 HTML 渲染生成，源文件 _tools/slide_shadow_idea.html）
 
 --- narration ---
 阴影的思路其实很直白
@@ -233,10 +237,10 @@
 >>> 把"太阳的视野"框住场景 #B11
 @enter: fade-up
 @exit: fade
-@visual: image(../assets/slide_shadow_fit.png)
+@visual: image(./assets/slide_shadow_fit.png)
 
 --- visual ---
-（实际使用 ../assets/slide_shadow_fit.png：正交取景框套住整个场景，渲一张阴影深度图。本图由 HTML 渲染生成，源文件 _html/slide_shadow_fit.html）
+（实际使用 ./assets/slide_shadow_fit.png：正交取景框套住整个场景，渲一张阴影深度图。本图由 HTML 渲染生成，源文件 _tools/slide_shadow_fit.html）
 
 --- narration ---
 太阳是平行光
@@ -258,10 +262,10 @@
 >>> 硬边变软边：PCF #B12
 @enter: fade
 @exit: fade
-@visual: image(../assets/slide_pcf.png)
+@visual: image(./assets/slide_pcf.png)
 
 --- visual ---
-（实际使用 ../assets/slide_pcf.png：硬阴影(采样一次) vs PCF 软阴影(采样一小片平均) 边缘对比。本图由 HTML 渲染生成，源文件 _html/slide_pcf.html）
+（实际使用 ./assets/slide_pcf.png：硬阴影(采样一次) vs PCF 软阴影(采样一小片平均) 边缘对比。本图由 HTML 渲染生成，源文件 _tools/slide_pcf.html）
 
 --- narration ---
 但只查一个点
@@ -281,10 +285,10 @@
 >>> 射灯也会投影 #B13
 @enter: fade-up
 @exit: fade
-@visual: image(../assets/final.png)
+@visual: image(./assets/final.png)
 
 --- visual ---
-（实际使用 ../assets/final.png：最终画面，工作台上方射灯照亮区域，物体在射灯下也产生投影。）
+（实际使用 ./assets/final.png：最终画面，工作台上方射灯照亮区域，物体在射灯下也产生投影。）
 
 --- narration ---
 除了太阳
@@ -304,10 +308,10 @@
 >>> 顺带一提：自己挡自己 #B14
 @enter: fade
 @exit: fade
-@visual: image(../assets/slide_bias.png)
+@visual: image(./assets/slide_bias.png)
 
 --- visual ---
-（实际使用 ../assets/slide_bias.png：阴影痤疮：表面自己挡自己冒黑斑 → 加一点深度偏移修复。本图由 HTML 渲染生成，源文件 _html/slide_bias.html）
+（实际使用 ./assets/slide_bias.png：阴影痤疮：表面自己挡自己冒黑斑 → 加一点深度偏移修复。本图由 HTML 渲染生成，源文件 _tools/slide_bias.html）
 
 --- narration ---
 还有个常见小毛病
@@ -325,10 +329,10 @@
 >>> 最后一块拼图：雾 #B15
 @enter: fade-up
 @exit: fade
-@visual: image(../assets/slide_fog_hook.png)
+@visual: image(./assets/slide_fog_hook.png)
 
 --- visual ---
-（实际使用 ../assets/slide_fog_hook.png：找不同：没有雾 vs 有雾 两图并排。本图由 HTML 渲染生成，源文件 _html/slide_fog_hook.html）
+（实际使用 ./assets/slide_fog_hook.png：找不同：没有雾 vs 有雾 两图并排。本图由 HTML 渲染生成，源文件 _tools/slide_fog_hook.html）
 
 --- narration ---
 光照和阴影都齐了
@@ -348,10 +352,10 @@ Unity 那边
 >>> 雾：远处褪向雾色 #B16
 @enter: fade
 @exit: fade
-@visual: image(../assets/slide_fog.png)
+@visual: image(./assets/slide_fog.png)
 
 --- visual ---
-（实际使用 ../assets/slide_fog.png：雾按距离褪向雾色的示意（近饱满→远只剩雾色）。本图由 HTML 渲染生成，源文件 _html/slide_fog.html）
+（实际使用 ./assets/slide_fog.png：雾按距离褪向雾色的示意（近饱满→远只剩雾色）。本图由 HTML 渲染生成，源文件 _tools/slide_fog.html）
 
 --- narration ---
 雾的规则很朴素
@@ -371,10 +375,10 @@ Unity 那边
 >>> 色调映射：把过亮压回来 #B17
 @enter: fade-up
 @exit: fade
-@visual: image(../assets/slide_aces.png)
+@visual: image(./assets/slide_aces.png)
 
 --- visual ---
-（实际使用 ../assets/slide_aces.png：ACES 色调映射 S 曲线：把过亮输入柔和压回 0–1。本图由 HTML 渲染生成，源文件 _html/slide_aces.html）
+（实际使用 ./assets/slide_aces.png：ACES 色调映射 S 曲线：把过亮输入柔和压回 0–1。本图由 HTML 渲染生成，源文件 _tools/slide_aces.html）
 
 --- narration ---
 渲染时算出来的亮度
@@ -395,10 +399,10 @@ Unity 用它
 >>> 天空盒：背景那片天 #B18
 @enter: fade
 @exit: fade
-@visual: image(../assets/final.png)
+@visual: image(./assets/final.png)
 
 --- visual ---
-（实际使用 ../assets/final.png：注意画面上半部分的天空——顶部偏深蓝，向地平线渐变为亮白，是一个三段渐变的天空。）
+（实际使用 ./assets/final.png：注意画面上半部分的天空——顶部偏深蓝，向地平线渐变为亮白，是一个三段渐变的天空。）
 
 --- narration ---
 没有物体的地方
@@ -419,10 +423,10 @@ Unity 用它
 >>> 对账：到底像不像 #B19
 @enter: fade-up
 @exit: fade
-@visual: image(../assets/diff_heatmap.png)
+@visual: image(./assets/diff_heatmap.png)
 
 --- visual ---
-（实际使用 ../assets/diff_heatmap.png：我们的输出与 Unity 参考图逐像素差异热力图，蓝=几乎一致，红=差异大，差异主要集中在中部工作台/工具一带。）
+（实际使用 ./assets/diff_heatmap.png：我们的输出与 Unity 参考图逐像素差异热力图，蓝=几乎一致，红=差异大，差异主要集中在中部工作台/工具一带。）
 
 --- narration ---
 最后
@@ -446,10 +450,10 @@ Unity 用它
 >>> 整趟旅程 · 收尾 #B20
 @enter: fade
 @exit: fade
-@visual: image(../assets/compare_ours_ref.png)
+@visual: image(./assets/compare_ours_ref.png)
 
 --- visual ---
-（实际使用 ../assets/compare_ours_ref.png：左右并排，左为 MyRender 的 CPU 输出，右为 Unity 参考图，几乎一致。）
+（实际使用 ./assets/compare_ours_ref.png：左右并排，左为 MyRender 的 CPU 输出，右为 Unity 参考图，几乎一致。）
 
 --- narration ---
 回头看这两集

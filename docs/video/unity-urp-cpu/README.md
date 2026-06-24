@@ -10,7 +10,7 @@
 - **调试驱动 + 真实截图**：几乎所有"结果"都用渲染器**实跑出来的截图**（debug 视图、
   功能开关对比、与 Unity 对照），概念用动画图解，少量 AI 概念图。
 - **端到端**：Unity C# 导出器 → JSON/mesh 数据 → 加载 → 渲染管线 → 与 Unity 对比验证。
-- **本场景**：一个工地/工作台场景（bench、电钻、studs 框架、干墙、青色墙、地面），
+- **本场景**：一个工地/工作台场景（bench、电钻、studs 框架、干墙、地面），
   实时光 + 雾，最终与 Unity 参考图对齐到 PSNR ≈ 24 dB。
 - **语气**：像同事在你旁边讲源码，务实、有据（每个结论都有截图/数字佐证）。
 
@@ -19,7 +19,7 @@
 | 集 | 主题 | 讲什么 | 核心素材 |
 |----|------|--------|---------|
 | **上集** `ep1` | 导出 + 几何管线 | 架构地图；一帧数据流；C# 导出器把 Unity 场景写成 JSON+mesh；坐标系/矩阵/光照单位对齐；然后顶点变换(MVP) → 裁剪 → 光栅化 → 透视校正插值 → 深度 → 多线程 | `final` `orbit.mp4` `unity_exporter_menu` `wire` `uv` `threads` |
-| **下集** `ep2` | 光照阴影与成像 | albedo/法线 → PBR 直接光(主光+spot) → SH 环境光 → **真实 1/π bug(环境光暗 π 倍)**；阴影(正交 shadow map + 5×5 PCF 软阴影 + spot)；雾(exp2) → ACES → 天空盒；用热力图/对比图与 Unity 对账收尾 | `albedo` `normal_mapped` `direct_only` `ambient_*` `cyan_*_crop` `shadow_*` `fog_off` `diff_heatmap` `compare_ours_ref` |
+| **下集** `ep2` | 光照阴影与成像 | albedo/法线 → PBR 直接光(主光+spot) → SH 环境光 → **真实 1/π bug(环境光暗约 π 倍≈3 倍)**；阴影(正交 shadow map + 5×5 PCF 软阴影 + spot)；雾(exp2) → ACES → 天空盒；用热力图/对比图与 Unity 对账收尾 | `albedo` `normal_mapped` `direct_only` `ambient_*` `cyan_*_crop` `shadow_*` `fog_off` `diff_heatmap` `compare_ours_ref` |
 
 > 上集 17 块、下集 20 块，每集约 18–20 分钟。按"形状 → 颜色"切分：上集把三角形送上屏幕，下集给像素上色。
 
@@ -28,9 +28,11 @@
 视觉优先级：**① 渲染器真实截图 → ② 我手写 HTML 渲成的静态幻灯片 → ③ orbit 真实视频**。
 **不使用 `@visual: animation`（AI 生成组件）、也不用文生图**——每张图都由我精确控制，利于一次构建通过。
 
-- **HTML 幻灯片**：所有图表/流程图/对比版式都是 `assets/_html/*.html`（共享 `style.css`，
-  主题与字号统一），用 Chrome 无头模式渲成 1920×1080 PNG（`slide_*.png`）。
-  重新生成：`cd assets/_html && python gen_ep1.py && python gen_ep2.py && node render.js <名字...>`。
+- **HTML 幻灯片**：所有图表/流程图/对比版式都是 `_tools/*.html`（共享 `style.css`，
+  主题与字号统一），用 Chrome 无头模式渲成 1920×1080 PNG（`slide_*.png`），分别落到
+  `ep1/assets/` 与 `ep2/assets/`。
+  重新生成：`cd _tools && python gen_ep1.py && python gen_ep2.py && node render.js <名字...>`
+  （`render.js` 会按 slide 所属集自动选输出目录）。
 - **真实截图**：渲染器 debug 视图 / 功能开关，见下。
 - **真实视频**：`orbit.mp4` 由 Unity 捕获脚本导出序列帧、ffmpeg 合成。
 
@@ -42,26 +44,26 @@
 SC=assets/unity_export/SampleScene; EXE=./build/Release/MyRender.exe
 # debug 视图：0 final / 1 albedo / 2 normalGeom / 3 normalMapped / 4 uv / 5 wire / 6 threads / 7 bakedGI(SH环境光)
 $EXE --capture-unity $SC out.bmp <view> 0 2
-# 功能隔离：雾关 / 模拟 1π bug(环境光×0.625) / 灭灯
+# 功能隔离：雾关 / 模拟 1/π bug(环境光暗约 π 倍) / 灭灯
 MR_FOG_MODE=0 $EXE --capture-unity $SC fog_off.bmp 0 0 2
 MR_GI=0.625  $EXE --capture-unity $SC ambient_bug.bmp 0 0 2
 ```
 
-素材都在 [`assets/`](assets/)。**Unity 编辑器界面截图需你自行补充**——脚本里凡是
-`@visual: image(../assets/unity_*.png)` 的块，都是占位，已在该块 narration 上方用
-`<!-- TODO Unity 截图 -->` 标注，请截图后按文件名放进 `assets/`。
+截图产物按所属集放进对应目录：上集几何相关的进 `ep1/assets/`，下集光照/阴影/雾相关的进
+`ep2/assets/`（`final.png` 两集共用，各放一份）。Unity 编辑器界面截图（如 `unity_exporter_menu.png`）
+脚本拍不到，需手动截后放进对应集的 `assets/`；其余截图均已就位。
 
 ## Unity 侧素材：脚本一键生成
 
 在 urp2019 打开 `SampleScene`，点菜单 **MyRender ▸ Capture Video Assets**（脚本
-[`MyRenderVideoCapture.cs`](../../../unity-exporter/MyRenderExport/MyRenderVideoCapture.cs)，
-输出路径写死为本 `assets/` 目录），自动产出：
+[`MyRenderVideoCapture.cs`](../../../unity-exporter/MyRenderExport/MyRenderVideoCapture.cs)），
+自动产出环绕视频与若干静帧（产出路径在脚本里指定，按所属集放进对应 `assets/`）：
 
 | 产物 | 用在哪 | 说明 |
 |----|----|----|
 | `orbit.mp4` | EP1 #B05 | 真实 URP 环绕 hero 视频（120 帧序列由仓库侧 ffmpeg 合成） |
-| `unity_scene_game.png` | 备用静帧 | 主相机机位"标准答案"静图 |
-| `unity_fog_off.png` | 备用 | Unity 关雾对照（呼应 EP5） |
+| `unity_scene_game.png` | EP1 备用静帧 | 主相机机位"标准答案"静图 |
+| `unity_fog_off.png` | EP2 备用 | Unity 关雾对照（呼应本系列下集光照与雾） |
 
 **仅剩 1 张需手动截（可选）**：`unity_exporter_menu.png`（EP1 #B06，导出器菜单 UI，
 脚本拍不到）。不想截就把 #B06 改成动画图解即可。
@@ -71,9 +73,14 @@ MR_GI=0.625  $EXE --capture-unity $SC ambient_bug.bmp 0 0 2
 ```
 unity-urp-cpu/
 ├── README.md         本文件
-├── assets/           渲染器真实截图 + Unity 对照图/视频
-├── ep1/ meta.md + script.md   上集：导出 + 几何管线（17 块）
-└── ep2/ meta.md + script.md   下集：光照阴影与成像（20 块）
+├── _tools/           HTML 幻灯片源 + 生成脚本（gen_ep1/2.py · render.js · apply_slides.py · style.css）
+├── ep1/              上集：导出 + 几何管线（17 块）
+│   ├── meta.md  script.md
+│   └── assets/       仅本集用到的截图/幻灯片/视频（18 个文件）
+└── ep2/              下集：光照阴影与成像（20 块）
+    ├── meta.md  script.md
+    └── assets/       仅本集用到的截图/幻灯片（27 个文件）
 ```
 
-`ep1/` 与 `ep2/` 各是一个独立可构建的 AutoVideo 工程（每集 ≈18–20 分钟）。构建见 [`../../authoring/BUILD.md`](../../authoring/BUILD.md)。
+`ep1/` 与 `ep2/` 各是一个**独立可构建**的 AutoVideo 工程（assets 各自闭环，互不依赖上级目录），
+每集 ≈18–20 分钟。输入资源编写规范见 [`../../authoring/AUTHORING.md`](../../authoring/AUTHORING.md)。

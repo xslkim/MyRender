@@ -1,10 +1,10 @@
 >>> 开场钩子 #B01
 @enter: fade-up
 @exit: fade
-@visual: image(../assets/final.png)
+@visual: image(./assets/final.png)
 
 --- visual ---
-（实际使用 ../assets/final.png：MyRender 软渲染器输出的工地场景，960x540——工作台、电钻、木方框架、青色墙、地面，远处带一层淡淡的雾。）
+（实际使用 ./assets/final.png：MyRender 软渲染器输出的工地场景，960x540——工作台、电钻、木方框架、干墙、地面，远处带一层淡淡的雾。）
 
 --- narration ---
 你看到的这个工地场景
@@ -19,10 +19,10 @@
 >>> 这个系列要干什么 #B02
 @enter: fade
 @exit: fade
-@visual: image(../assets/slide_series_map.png)
+@visual: image(./assets/slide_series_map.png)
 
 --- visual ---
-（实际使用 ../assets/slide_series_map.png：系列两集卡片：上集(导出+几何，高亮) / 下集(光照阴影成像)。本图由 HTML 渲染生成，源文件 _html/slide_series_map.html）
+（实际使用 ./assets/slide_series_map.png：系列两集卡片：上集(导出+几何，高亮) / 下集(光照阴影成像)。本图由 HTML 渲染生成，源文件 _tools/slide_series_map.html）
 
 --- narration ---
 我们分成两集
@@ -40,10 +40,10 @@
 >>> 为什么要这么折腾 #B03
 @enter: fade-up
 @exit: fade
-@visual: image(../assets/slide_gpu_vs_cpu.png)
+@visual: image(./assets/slide_gpu_vs_cpu.png)
 
 --- visual ---
-（实际使用 ../assets/slide_gpu_vs_cpu.png：GPU(封闭·锁) vs CPU(可调试·放大镜) 左右对比面板，✗/✓ 列表。本图由 HTML 渲染生成，源文件 _html/slide_gpu_vs_cpu.html）
+（实际使用 ./assets/slide_gpu_vs_cpu.png：GPU(封闭·锁) vs CPU(可调试·放大镜) 左右对比面板，✗/✓ 列表。本图由 HTML 渲染生成，源文件 _tools/slide_gpu_vs_cpu.html）
 
 --- narration ---
 URP 的渲染跑在 **GPU** 上
@@ -61,10 +61,10 @@ URP 的渲染跑在 **GPU** 上
 >>> 端到端的数据流 #B04
 @enter: fade
 @exit: fade
-@visual: image(../assets/slide_dataflow.png)
+@visual: image(./assets/slide_dataflow.png)
 
 --- visual ---
-（实际使用 ../assets/slide_dataflow.png：端到端数据流：Unity 场景→C# 导出器→JSON+mesh→C++ 加载器→渲染管线→一帧画面。本图由 HTML 渲染生成，源文件 _html/slide_dataflow.html）
+（实际使用 ./assets/slide_dataflow.png：端到端数据流：Unity 场景→C# 导出器→JSON+mesh→C++ 加载器→渲染管线→一帧画面。本图由 HTML 渲染生成，源文件 _tools/slide_dataflow.html）
 
 --- narration ---
 整条链路就这么几步
@@ -83,10 +83,10 @@ C++ 这边的加载器把它们读进来
 >>> Unity 里的原始场景 #B05
 @enter: fade-up
 @exit: fade
-@visual: video(../assets/orbit.mp4)
+@visual: video(./assets/orbit.mp4)
 
 --- visual ---
-（实际使用 ../assets/orbit.mp4：真实 Unity URP 渲染的工地场景，相机绕场景缓慢转一圈——工作台、工具、木方框架、墙、地面，是后面要在 CPU 上还原的"标准答案"。静帧版见 ../assets/unity_scene_game.png。）
+（实际使用 ./assets/orbit.mp4：真实 Unity URP 渲染的工地场景，相机绕场景缓慢转一圈——工作台、工具、木方框架、墙、地面，是后面要在 CPU 上还原的"标准答案"。静帧版见 ./assets/unity_scene_game.png。）
 
 --- narration ---
 先看源头
@@ -103,10 +103,10 @@ C++ 这边的加载器把它们读进来
 >>> 导出器拉出了什么 #B06
 @enter: fade
 @exit: fade
-@visual: image(../assets/unity_exporter_menu.png)
+@visual: image(./assets/unity_exporter_menu.png)
 
 --- visual ---
-（实际使用 ../assets/unity_exporter_menu.png：Unity 编辑器里 MyRender 菜单展开，可见 Capture Video Assets、Export Active Scene 等导出器扩展菜单项。）
+（实际使用 ./assets/unity_exporter_menu.png：Unity 编辑器里 MyRender 菜单展开，可见 Capture Video Assets、Export Active Scene 等导出器扩展菜单项。）
 
 --- narration ---
 导出器是一个 Unity 的 **Editor 扩展**
@@ -122,10 +122,10 @@ C++ 这边的加载器把它们读进来
 >>> 场景写成一段 JSON #B07
 @enter: fade
 @exit: fade
-@visual: image(../assets/slide_scene_json.png)
+@visual: image(./assets/slide_scene_json.png)
 
 --- visual ---
-（实际使用 ../assets/slide_scene_json.png：scene.json 代码窗口，高亮相机/主光/环境光(球谐)/雾/物体五个字段。本图由 HTML 渲染生成，源文件 _html/slide_scene_json.html）
+（实际使用 ./assets/slide_scene_json.png：scene.json 代码窗口，高亮相机/主光/环境光(球谐)/雾/物体五个字段。本图由 HTML 渲染生成，源文件 _tools/slide_scene_json.html）
 
 --- narration ---
 JSON 长这样
@@ -142,10 +142,10 @@ JSON 长这样
 >>> 几何放进 mesh 文件 #B08
 @enter: fade
 @exit: fade
-@visual: image(../assets/wire.png)
+@visual: image(./assets/wire.png)
 
 --- visual ---
-（实际使用 ../assets/wire.png：工地场景的深度测试线框图，亮蓝色三角形网格，能看到工作台、框架、地面的三角形结构。）
+（实际使用 ./assets/wire.png：工地场景的深度测试线框图，亮蓝色三角形网格，能看到工作台、框架、地面的三角形结构。）
 
 --- narration ---
 顶点数据不适合塞进 JSON
@@ -162,10 +162,10 @@ mesh 文件负责"每个东西长什么样"
 >>> 较真：让 Unity 能当标准答案 #B09
 @enter: fade-up
 @exit: fade
-@visual: image(../assets/slide_align3.png)
+@visual: image(./assets/slide_align3.png)
 
 --- visual ---
-（实际使用 ../assets/slide_align3.png：三处必须对齐：坐标系 / 矩阵约定 / 光照单位，三张卡片。本图由 HTML 渲染生成，源文件 _html/slide_align3.html）
+（实际使用 ./assets/slide_align3.png：三处必须对齐：坐标系 / 矩阵约定 / 光照单位，三张卡片。本图由 HTML 渲染生成，源文件 _tools/slide_align3.html）
 
 --- narration ---
 要拿 Unity 当标准答案
@@ -184,10 +184,10 @@ mesh 文件负责"每个东西长什么样"
 >>> 数据进来了，开始走管线 #B10
 @enter: fade
 @exit: fade
-@visual: image(../assets/slide_geo_pipeline.png)
+@visual: image(./assets/slide_geo_pipeline.png)
 
 --- visual ---
-（实际使用 ../assets/slide_geo_pipeline.png：几何管线四步流程图：顶点变换→裁剪→光栅化→插值+深度。本图由 HTML 渲染生成，源文件 _html/slide_geo_pipeline.html）
+（实际使用 ./assets/slide_geo_pipeline.png：几何管线四步流程图：顶点变换→裁剪→光栅化→插值+深度。本图由 HTML 渲染生成，源文件 _tools/slide_geo_pipeline.html）
 
 --- narration ---
 数据已经从 Unity 进来了
@@ -204,10 +204,10 @@ mesh 文件负责"每个东西长什么样"
 >>> 第一步：把三角形摆到屏幕上 #B11
 @enter: fade-up
 @exit: fade
-@visual: image(../assets/slide_transform.png)
+@visual: image(./assets/slide_transform.png)
 
 --- visual ---
-（实际使用 ../assets/slide_transform.png：顶点变换四步：模型坐标→摆进世界(M)→相机视角(V)→压成屏幕(P)。本图由 HTML 渲染生成，源文件 _html/slide_transform.html）
+（实际使用 ./assets/slide_transform.png：顶点变换四步：模型坐标→摆进世界(M)→相机视角(V)→压成屏幕(P)。本图由 HTML 渲染生成，源文件 _tools/slide_transform.html）
 
 --- narration ---
 每个顶点要换四次"身份"
@@ -227,10 +227,10 @@ mesh 文件负责"每个东西长什么样"
 >>> 第二步：裁剪掉看不见的 #B12
 @enter: fade
 @exit: fade
-@visual: image(../assets/slide_clip.png)
+@visual: image(./assets/slide_clip.png)
 
 --- visual ---
-（实际使用 ../assets/slide_clip.png：裁剪示意：三角形跨屏幕边界被裁，蓝色=保留在屏幕内的部分。本图由 HTML 渲染生成，源文件 _html/slide_clip.html）
+（实际使用 ./assets/slide_clip.png：裁剪示意：三角形跨屏幕边界被裁，蓝色=保留在屏幕内的部分。本图由 HTML 渲染生成，源文件 _tools/slide_clip.html）
 
 --- narration ---
 不是所有三角形都该画
@@ -248,10 +248,10 @@ mesh 文件负责"每个东西长什么样"
 >>> 第三步：把三角形铺成像素 #B13
 @enter: fade
 @exit: fade
-@visual: image(./assets/B13.png)
+@visual: image(./assets/slide_raster.png)
 
 --- visual ---
-（实际使用 ../assets/slide_raster.png：光栅化：三角形覆盖像素网格，包围盒内逐像素判定，里面填、外面跳过。本图由 HTML 渲染生成，源文件 _html/slide_raster.html）
+（实际使用 ./assets/slide_raster.png：光栅化：三角形覆盖像素网格，包围盒内逐像素判定，里面填、外面跳过。本图由 HTML 渲染生成，源文件 _tools/slide_raster.html）
 
 --- narration ---
 光栅化就是把三角形"涂"成像素
@@ -269,10 +269,10 @@ mesh 文件负责"每个东西长什么样"
 >>> 第四步之一：颜色怎么过渡 #B14
 @enter: fade-up
 @exit: fade
-@visual: image(../assets/uv.png)
+@visual: image(./assets/uv.png)
 
 --- visual ---
-（实际使用 ../assets/uv.png：UV 坐标可视化，地面和物体表面呈红绿渐变，地砖的格子线笔直、不扭曲。）
+（实际使用 ./assets/uv.png：UV 坐标可视化，地面和物体表面呈红绿渐变，地砖的格子线笔直、不扭曲。）
 
 --- narration ---
 三角形只有三个顶点有数据
@@ -293,10 +293,10 @@ mesh 文件负责"每个东西长什么样"
 >>> 第四步之二：谁挡住了谁 #B15
 @enter: fade
 @exit: fade
-@visual: image(../assets/slide_depth.png)
+@visual: image(./assets/slide_depth.png)
 
 --- visual ---
-（实际使用 ../assets/slide_depth.png：深度缓冲：近的卡片挡住远的卡片，每像素只留最近。本图由 HTML 渲染生成，源文件 _html/slide_depth.html）
+（实际使用 ./assets/slide_depth.png：深度缓冲：近的卡片挡住远的卡片，每像素只留最近。本图由 HTML 渲染生成，源文件 _tools/slide_depth.html）
 
 --- narration ---
 同一个像素
@@ -317,10 +317,10 @@ mesh 文件负责"每个东西长什么样"
 >>> 顺带一提：它是多线程跑的 #B16
 @enter: fade
 @exit: fade
-@visual: image(../assets/threads.png)
+@visual: image(./assets/threads.png)
 
 --- visual ---
-（实际使用 ../assets/threads.png：多线程分条可视化，画面被按横向条带分给不同线程，每条带有不同的淡色调。）
+（实际使用 ./assets/threads.png：多线程分条可视化，画面被按横向条带分给不同线程，每条带有不同的淡色调。）
 
 --- narration ---
 这些计算量不小
@@ -337,10 +337,10 @@ CPU 慢
 >>> 上集小结 · 下集预告 #B17
 @enter: fade-up
 @exit: fade
-@visual: image(../assets/slide_p1_recap.png)
+@visual: image(./assets/slide_p1_recap.png)
 
 --- visual ---
-（实际使用 ../assets/slide_p1_recap.png：上集小结五要点 + "下集→像素的颜色怎么算" 预告。本图由 HTML 渲染生成，源文件 _html/slide_p1_recap.html）
+（实际使用 ./assets/slide_p1_recap.png：上集小结五要点 + "下集→像素的颜色怎么算" 预告。本图由 HTML 渲染生成，源文件 _tools/slide_p1_recap.html）
 
 --- narration ---
 上集到这里
